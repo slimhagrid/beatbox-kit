@@ -10,7 +10,7 @@
 
 /* ── PAGE LAYOUT ── */
 .bodular-page {
-  max-width: 1140px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 40px 0 40px;
 }
@@ -263,12 +263,17 @@
   overflow: auto;
   position: relative;
   max-height: 70vh;
+  scrollbar-width: none;
 }
+.bodular-rack::-webkit-scrollbar { display: none; }
 
 .bodular-rails {
   position: relative;
   z-index: 2;
+  min-width: 1440px;
 }
+
+.bodular-rail { min-width: 1440px; }
 
 .bodular-cable-canvas {
   position: absolute;

@@ -7,7 +7,7 @@ window.Bodular = (function () {
   let audioCtx = null;
 
   const HP_PX = 12;
-  const RAIL_HP = 84;
+  const RAIL_HP = 120;
   const CABLE_COLORS = ['#d63b2f', '#e08a00', '#3a7d44', '#4de8ff', '#b16cff', '#ff8c42', '#2f6fd6'];
 
   let rails = [];          // [{ el, list: [moduleId, ...] }]
