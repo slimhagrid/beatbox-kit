@@ -20,10 +20,8 @@ const statsObs = new MutationObserver(() => {
 const statsEl = document.getElementById('stats-row');
 if (statsEl) statsObs.observe(statsEl, { attributes: true });
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Baudit !== 'undefined') Baudit.init();
-});
-
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  setTimeout(() => { if (typeof Baudit !== 'undefined') Baudit.init(); }, 0);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => Baudit.init());
+} else {
+  Baudit.init();
 }

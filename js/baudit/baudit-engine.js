@@ -912,7 +912,10 @@ const Baudit = (() => {
   }
 
   // ── INIT ──
+  let _inited=false;
   function init() {
+    if(_inited) return;
+    _inited=true;
     const fileInput=document.getElementById('file-input');
     document.getElementById('btn-upload').addEventListener('click',()=>fileInput.click());
     fileInput.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0],false);});
