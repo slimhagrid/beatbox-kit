@@ -47,7 +47,7 @@ function lissajous(id, cfg) {
     for (let i = 0; i < cfg.steps; i++) {
       const t = (i / cfg.steps) * Math.PI * 2;
       const bpx = Math.round(c + Math.sin(cfg.a * t + delta) * (range / 2) * scale);
-      const bpy = Math.round(c + Math.sin(cfg.b * t + delta * (cfg.phaseY ?? 0)) * (range / 2) * scale);
+      const bpy = Math.round(c + Math.sin(cfg.b * t + delta * (cfg.phaseY ?? 0) + (cfg.phaseOffset ?? 0)) * (range / 2) * scale);
       bx.fillStyle = i / cfg.steps > cfg.tailAt ? cfg.colors[1] : cfg.colors[0];
       bx.fillRect(bpx, bpy, 1, 1);
     }
@@ -83,4 +83,13 @@ lissajous("branular-lissajous", {
   a: 48, b: 44, steps: 2900,
   colors: ["#4de8ff", "#1aa8c4"],
 tailAt: 0.9, fade: 0.055, margin: 0, speed: 0.014,
+});
+
+lissajous("bodular-lissajous", {
+  a: 15, b: 12, steps: 50,
+  colors: ["#b16cff", "#7a3fc9"],
+  tailAt: 0.85, fade: 0.045, margin: 3, speed: 0.029,
+  breathing: { rate: 0.14, depth: 0.22 },
+  phaseY: 1.15,
+  phaseOffset: Math.PI / 2,
 });

@@ -400,6 +400,10 @@ body {
   background: var(--bk-branular);
 }
 
+.bk-sticker-new.violet {
+  background: var(--bk-bodular);
+}
+
 /* ── BUTTONS ── */
 .bk-btn {
   font-family: var(--font-display);
@@ -439,6 +443,12 @@ body {
 
 .bk-btn-primary.cyan:hover {
   background: var(--bk-branular);
+  color: var(--bk-black);
+  border-color: var(--bk-black);
+}
+
+.bk-btn-primary.violet:hover {
+  background: var(--bk-bodular);
   color: var(--bk-black);
   border-color: var(--bk-black);
 }
@@ -763,6 +773,11 @@ body {
 
     .lp-tool-left.cyan {
       background: var(--bk-branular);
+      padding: 20px;
+    }
+
+    .lp-tool-left.violet {
+      background: var(--bk-bodular);
       padding: 20px;
     }
 
