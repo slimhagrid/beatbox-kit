@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bodular — Modular Beatbox Board · Beatbox Kit</title>
+  <meta name="description" content="Use patch cables and add modules to rails to build modular beatbox with beatbox samples.">
+
+  <link rel="stylesheet" href="../styles/bk-global.css">
+  <link rel="stylesheet" href="../styles/bodular.css">
+</head>
+
+<body>
+
+    <!-- TOP BANNER -->
+  <div class="bk-top-banner">
+    <a href="/" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
+    <a href="/branular/" class="bk-banner-cta orange">Try Branular →</a>
+  </div>
+
+  <!-- SITE NAV -->
+  <nav class="bk-nav" aria-label="Site navigation">
+    <a href="/" class="bk-nav-link">Home</a>
+    <a href="#about" class="bk-nav-link">About</a>
+    <div class="bk-nav-dropdown-wrap">
+      <button class="bk-nav-dropdown-btn active" id="tools-dropdown-btn">
+        All Tools <span class="bk-nav-dropdown-arrow">▾</span>
+      </button>
+      <div class="bk-nav-dropdown" id="tools-dropdown">
+        <a href="/baudit/" class="bk-nav-dropdown-item baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bk-nav-dropdown-item bodular active">Bodular — Modular</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <button class="bk-hamburger" id="bk-hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="bk-mobile-nav" id="bk-mobile-nav">
+    <a href="/">Home</a>
+    <div class="bk-mobile-tools-wrap">
+      <button class="bk-mobile-tools-btn" id="bk-mobile-tools-btn">
+        All Tools <span class="bk-mobile-tools-arrow">▾</span>
+      </button>
+      <div class="bk-mobile-tools-sub" id="bk-mobile-tools-sub">
+        <a href="/baudit/" class="baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bodular">Bodular — Modular</a>
+      </div>
+    </div>
+    <a href="#about">About</a>
+  </nav>
+
+    <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <div class="lp-hero-kicker violet">Beatbox Modular</div>
+        <h1 class="lp-hero-title violet">
+          TOOL 04:<br>
+          <em>Bodular</em>
+        </h1>
+        <p class="lp-hero-sub">
+          Use patch cables and add modules to rails to build modular beatbox with beatbox samples.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+
+  <hr class="bk-rule">
+
+  <!-- BODULAR PAGE -->
+  <div class="bodular-page">
+
+    <!-- Tool identity bar -->
+    <div class="bodular-tool-header">
+      <div>
+        <div class="bodular-tool-name">BODULAR</div>
+        <div class="bodular-tool-desc">Add modules to the rack, then patch them together with cables. Upload your own beatbox samples to play through the rack.
+          <br>Bodular is a work in progress, there may be glitches/oddities.
+        </div>
+      </div>
+    </div>
+
+    <!-- App shell -->
+    <div class="bodular-shell">
+
+      <!-- Shell title bar -->
+      <div class="bodular-shell-bar">
+        <span class="bodular-shell-title" id="bodular-session-name">empty rack</span>
+        <span class="bodular-shell-status">READY</span>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="bodular-toolbar">
+        <div class="bodular-add-wrap">
+          <button class="bodular-add-btn" id="bodular-add-btn">+ Add Module <span>▾</span></button>
+          <div class="bodular-add-menu" id="bodular-add-menu">
+            <div class="bodular-add-category">
+              <button class="bodular-add-cat-btn">Sources <span>▸</span></button>
+              <div class="bodular-add-submenu">
+                <button class="bodular-add-item" data-type="sample">Sample Player<span class="bodular-add-item-hp">Upload &amp; trigger a beatbox sample</span></button>
+                <button class="bodular-add-item" data-type="lfo">LFO<span class="bodular-add-item-hp">Cyclic CV source for modulation</span></button>
+                <button class="bodular-add-item" data-type="noise">Noise<span class="bodular-add-item-hp">White noise source</span></button>
+                <button class="bodular-add-item" data-type="clock">Clock<span class="bodular-add-item-hp">Pulse source — drives triggers</span></button>
+              </div>
+            </div>
+            <div class="bodular-add-category">
+              <button class="bodular-add-cat-btn">Processing <span>▸</span></button>
+              <div class="bodular-add-submenu">
+                <button class="bodular-add-item" data-type="vca">VCA<span class="bodular-add-item-hp">Amplify / attenuate a signal</span></button>
+                <button class="bodular-add-item" data-type="vcf">VCF<span class="bodular-add-item-hp">Voltage-controlled filter</span></button>
+                <button class="bodular-add-item" data-type="delay">Delay<span class="bodular-add-item-hp">Echo with feedback &amp; mix</span></button>
+                <button class="bodular-add-item" data-type="attenuverter">Attenuverter<span class="bodular-add-item-hp">Scale &amp; invert / offset a signal</span></button>
+                <button class="bodular-add-item" data-type="envelope">Envelope (ADSR)<span class="bodular-add-item-hp">Attack/decay/sustain/release CV shaper, trig-fired</span></button>
+              </div>
+            </div>
+            <div class="bodular-add-category">
+              <button class="bodular-add-cat-btn">Utility <span>▸</span></button>
+              <div class="bodular-add-submenu">
+                <button class="bodular-add-item" data-type="mult">Mult<span class="bodular-add-item-hp">Split one signal to three jacks</span></button>
+                <button class="bodular-add-item" data-type="arp">Arpeggiator<span class="bodular-add-item-hp">4 inputs → 1 output, trig-advanced step switch</span></button>
+              </div>
+            </div>
+            <div class="bodular-add-category">
+              <button class="bodular-add-cat-btn">Output <span>▸</span></button>
+              <div class="bodular-add-submenu">
+                <button class="bodular-add-item" data-type="mixer">Mixer<span class="bodular-add-item-hp">Sum up to 4 signals</span></button>
+                <button class="bodular-add-item" data-type="output">Output<span class="bodular-add-item-hp">Master volume → speakers</span></button>
+              </div>
+            </div>
+            <div class="bodular-add-category">
+              <button class="bodular-add-cat-btn">Visuals <span>▸</span></button>
+              <div class="bodular-add-submenu">
+                <button class="bodular-add-item" data-type="oscilloscope">Oscilloscope<span class="bodular-add-item-hp">Passthrough scope — patch in-line on any signal</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="bodular-cable-toggle-btn" id="bodular-cable-toggle-btn"><kbd>C</kbd> Show Cables</button>
+        <button class="bodular-record-btn" id="bodular-record-btn">⏺</button>
+        <button class="bodular-clear-btn" id="bodular-clear-btn">✕ Clear Rack</button>
+      </div>
+
+      <!-- Rack -->
+      <div class="bodular-rack" id="bodular-rack">
+        <div class="bodular-empty-hint" id="bodular-empty-hint">Add a module to get started →</div>
+        <canvas class="bodular-cable-canvas" id="bodular-cable-canvas"></canvas>
+        <div class="bodular-rails" id="bodular-rails"></div>
+      </div>
+
+    </div><!-- /bodular-shell -->
+
+  </div><!-- /bodular-page -->
+
+  <hr class="bk-rule">
+
+  <!-- ABOUT SECTION -->
+  <section class="lp-about" id="about">
+    <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX
+      KIT</div>
+    <div class="lp-about-inner">
+      <div>
+        <h2>Built for the craft.</h2>
+        <p>
+          Beatbox Kit exists because it's fun to get better at beatboxing. Create an analytical approach to improving your routines with a tool kit developed specifically for beatboxers.
+        </p>
+      </div>
+      <div>
+        <h2>Free to use.</h2>
+        <p>
+          All tools in Beatbox Kit are made for the community. There's no mandatory subscription for Beatbox Kit.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bk-footer">
+    <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
+  </footer>
+
+  <script src="../js/bodular/bodular-stuff.js" defer></script>
+  <!-- Sources -->
+  <script src="../js/bodular/modules/sources/sample.js" defer></script>
+  <script src="../js/bodular/modules/sources/lfo.js" defer></script>
+  <script src="../js/bodular/modules/sources/noise.js" defer></script>
+  <script src="../js/bodular/modules/sources/clock.js" defer></script>
+  <!-- Processing -->
+  <script src="../js/bodular/modules/processing/vca.js" defer></script>
+  <script src="../js/bodular/modules/processing/vcf.js" defer></script>
+  <script src="../js/bodular/modules/processing/delay.js" defer></script>
+  <script src="../js/bodular/modules/processing/attenuverter.js" defer></script>
+  <script src="../js/bodular/modules/processing/envelope.js" defer></script>
+  <!-- Utility -->
+  <script src="../js/bodular/modules/utility/mult.js" defer></script>
+  <script src="../js/bodular/modules/utility/arp.js" defer></script>
+  <!-- Output -->
+  <script src="../js/bodular/modules/output/mixer.js" defer></script>
+  <script src="../js/bodular/modules/output/output.js" defer></script>
+  <!-- Visuals -->
+  <script src="../js/bodular/modules/visuals/oscilloscope.js" defer></script>
+  <script src="../js/navbar-stuff.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof Bodular !== 'undefined') Bodular.init();
+    });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(() => { if (typeof Bodular !== 'undefined') Bodular.init(); }, 0);
+    }
+  </script>
+</body>
+
+</html>

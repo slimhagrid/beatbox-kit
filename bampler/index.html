@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bampler — Beatbox Sampler · Beatbox Kit</title>
+  <meta name="description" content="Slice your beatbox audio into 16 playable pads. Keyboard shortcuts, live recording, sample mode.">
+
+  <link rel="stylesheet" href="../styles/bk-global.css">
+  <link rel="stylesheet" href="../styles/bampler.css">
+</head>
+
+<body>
+
+    <!-- TOP BANNER -->
+  <div class="bk-top-banner">
+    <a href="/" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
+    <a href="/baudit/" class="bk-banner-cta">Try Baudit →</a>
+  </div>
+
+  <!-- SITE NAV -->
+  <nav class="bk-nav" aria-label="Site navigation">
+    <a href="/" class="bk-nav-link">Home</a>
+    <a href="#about" class="bk-nav-link">About</a>
+    <div class="bk-nav-dropdown-wrap">
+      <button class="bk-nav-dropdown-btn active" id="tools-dropdown-btn">
+        All Tools <span class="bk-nav-dropdown-arrow">▾</span>
+      </button>
+      <div class="bk-nav-dropdown" id="tools-dropdown">
+        <a href="/baudit/" class="bk-nav-dropdown-item baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bk-nav-dropdown-item bampler active">Bampler — Sampler</a>
+        <a href="/branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <button class="bk-hamburger" id="bk-hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="bk-mobile-nav" id="bk-mobile-nav">
+    <a href="/">Home</a>
+    <div class="bk-mobile-tools-wrap">
+      <button class="bk-mobile-tools-btn" id="bk-mobile-tools-btn">
+        All Tools <span class="bk-mobile-tools-arrow">▾</span>
+      </button>
+      <div class="bk-mobile-tools-sub" id="bk-mobile-tools-sub">
+        <a href="/baudit/" class="baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bodular">Bodular — Modular</a>
+      </div>
+    </div>
+    <a href="#about">About</a>
+  </nav>
+
+  <!-- HIDDEN FILE INPUT -->
+  <input type="file" id="file-input" accept="audio/*" style="display:none">
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <div class="lp-hero-kicker orange">Beatbox Sampler</div>
+        <h1 class="lp-hero-title orange">
+          TOOL 02:<br>
+          <em>Bampler</em>
+        </h1>
+        <p class="lp-hero-sub">
+          Load your audio, slice it up, play 16 pads with your keyboard.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="bk-rule">
+
+  <!-- BAMPLER PAGE -->
+  <div class="bampler-page">
+
+    <!-- Tool identity bar -->
+    <div class="bampler-tool-header">
+      <div>
+        <div class="bampler-tool-name">BAMPLER</div>
+        <div class="bampler-tool-desc">Upload or record your beatbox audio. Slice it into 16 pads and perform with your keyboard.
+          <br>Bampler is a work in progress, there may be glitches/oddities.
+        </div>
+      </div>
+    </div>
+
+    <!-- App shell -->
+    <div class="bampler-shell">
+
+      <!-- Shell title bar -->
+      <div class="bampler-shell-bar">
+        <span class="bampler-shell-title" id="session-name">no session loaded</span>
+        <span class="bampler-shell-status" id="shell-status">READY</span>
+      </div>
+
+      <!-- App body -->
+      <div class="bampler-body">
+
+        <!-- UPLOAD PANEL -->
+        <div class="upload-panel" id="upload-panel">
+          <canvas id="upload-icon-canvas" width="20" height="20"></canvas>
+          <div id="upload-title">Drop your audio here — or record live</div>
+          <div id="upload-sub">MP3, WAV, OGG · Max 2 minutes</div>
+          <div class="upload-actions">
+            <button class="btn-upload" id="btn-upload">Upload Audio</button>
+            <button class="btn-record" id="btn-record">
+              <span id="rec-label">Record</span>
+            </button>
+          </div>
+          <div id="rec-timer" style="display:none;">
+            ⏺ <span id="rec-time-display">0:00</span> / 2:00
+          </div>
+          <div id="processing-indicator" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px;">
+              <div class="spinner"></div>
+              <span id="processing-msg">Loading audio…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WAVEFORM PANEL (hidden until audio loaded) -->
+        <div class="wave-panel" id="wave-panel" style="display:none;">
+          <div class="wave-controls">
+            <button class="wave-play-btn" id="wave-play-btn" title="Play / Pause (Space)">▶</button>
+            <span class="wave-time-info">
+              <span id="wave-time-cur">0:00</span> / <span id="wave-time-tot">0:00</span>
+            </span>
+            <div class="sample-mode-wrap">
+              <label class="toggle-switch">
+                <input type="checkbox" id="sample-mode-toggle">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+              <span class="sample-mode-label" id="sample-mode-label">Sample Mode: <strong>OFF</strong></span>
+            </div>
+            <button class="btn-reset-wave" id="btn-reset">↺ Start Over</button>
+          </div>
+          <div class="wave-hint" id="wave-hint" style="display:none;">Select a pad below, then drag on the waveform to set its sample region</div>
+          <div class="wave-canvas-wrap">
+            <canvas id="bampler-wave-canvas"></canvas>
+          </div>
+          <div class="wave-ruler" id="wave-ruler">
+            <span class="ruler-tick">0:00</span>
+            <span class="ruler-tick" id="ruler-q1"></span>
+            <span class="ruler-tick" id="ruler-mid"></span>
+            <span class="ruler-tick" id="ruler-q3"></span>
+            <span class="ruler-tick" id="ruler-end"></span>
+          </div>
+        </div>
+
+        <!-- PAD RECORD CONTROLS (hidden until audio loaded) -->
+        <div class="pad-controls-row" id="pad-controls-row" style="display:none;">
+          <div class="pad-rec-left">
+            <button class="btn-export-pads" id="btn-export-pads" title="Download all loaded pads as WAV files in a zip">Export Pads</button>
+            <button class="btn-pad-record" id="btn-pad-record">Record to Pad</button>
+            <div class="rec-source-toggle" id="rec-source-toggle" title="Record source">
+              <button class="rec-source-btn active" id="rec-source-mic" data-source="mic" title="Record from microphone">M</button>
+              <button class="rec-source-btn" id="rec-source-kbd" data-source="keyboard" title="Record the pads as you play them">K</button>
+            </div>
+            <span id="pad-rec-timer" style="display:none;">⏺ <span id="pad-rec-time">0:00</span> / 2:00</span>
+          </div>
+          <button class="btn-auto-chop" id="btn-auto-chop" title="Randomly slice waveform into all unlocked pads">Auto Chop</button>
+        </div>
+
+        <!-- ASSIGN BAR (shown after pad recording stops) -->
+        <div class="assign-bar" id="assign-bar" style="display:none;">
+          <span class="assign-bar-msg">Recording captured — click a pad to assign it</span>
+          <button class="assign-discard-btn" id="assign-discard-btn">✕ Discard</button>
+        </div>
+
+        <!-- PAD GRID (hidden until audio loaded) -->
+        <div class="pad-grid" id="pad-grid" style="display:none;">
+          <!-- generated by bampler-stuff.js -->
+        </div>
+
+        <!-- PAD KEY HINT -->
+        <div class="pad-key-hint" id="pad-key-hint" style="display:none;">
+          Click a pad or press its key to play. In Sample Mode, select a pad then drag the waveform to set its region. Click the key label on any pad to remap it.
+        </div>
+
+      </div><!-- /bampler-body -->
+    </div><!-- /bampler-shell -->
+
+  </div><!-- /bampler-page -->
+
+  <hr class="bk-rule">
+
+  <!-- ABOUT SECTION -->
+  <section class="lp-about" id="about">
+    <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX KIT</div>
+    <div class="lp-about-inner">
+      <div>
+        <h2>Built for the craft.</h2>
+        <p>
+          Beatbox Kit exists because it's fun to get better at beatboxing. Create an analytical approach to improving your routines with a tool kit developed specifically for beatboxers.
+        </p>
+      </div>
+      <div>
+        <h2>Free to use.</h2>
+        <p>
+          All tools in Beatbox Kit are made for the community. There's no mandatory subscription for Beatbox Kit.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bk-footer">
+    <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
+  </footer>
+
+  <script src="../js/bampler/bampler-stuff.js" defer></script>
+  <script src="../js/bampler/bampler-upload-animation.js" defer></script>
+  <script src="../js/navbar-stuff.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof Bampler !== 'undefined') Bampler.init();
+    });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(() => { if (typeof Bampler !== 'undefined') Bampler.init(); }, 0);
+    }
+  </script>
+
+</body>
+
+</html>

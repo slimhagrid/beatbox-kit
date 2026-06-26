@@ -1,0 +1,659 @@
+/* bodular.css — Bodular modular rack page styles
+   Applies on top of bk-global.css
+   Dell 1996 system: flat fills, hard borders, no radius
+   ──────────────────────────────────────────────────── */
+
+/* ── HERO ACCENT ── */
+.lp-hero-kicker.violet { color: var(--bk-bodular); }
+.lp-hero-kicker.violet::before { background: var(--bk-bodular); }
+.lp-hero-title.violet em { color: var(--bk-bodular); }
+
+/* ── PAGE LAYOUT ── */
+.bodular-page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 40px 0 40px;
+}
+
+/* ── TOOL HEADER ── */
+.bodular-tool-header {
+  background: var(--bk-bodular);
+  border-bottom: 2px solid var(--bk-black);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bodular-tool-name {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--bk-black);
+  letter-spacing: -0.01em;
+}
+
+.bodular-tool-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(0,0,0,0.65);
+  margin-top: 4px;
+}
+
+/* ── APP SHELL ── */
+.bodular-shell {
+  border: 2px solid var(--bk-black);
+  border-top: none;
+}
+
+.bodular-shell-bar {
+  background: var(--bk-black);
+  color: var(--bk-white);
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bodular-shell-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.7);
+}
+
+.bodular-shell-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--bk-bodular);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── TOOLBAR ── */
+.bodular-toolbar {
+  background: var(--bk-white);
+  border-bottom: 2px solid var(--bk-black);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bodular-add-wrap {
+  position: relative;
+}
+
+.bodular-add-btn {
+  background: var(--bk-black);
+  color: var(--bk-white);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 9px 18px;
+  border: 2px solid var(--bk-black);
+  cursor: pointer;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bodular-add-btn:hover { background: var(--bk-bodular); color: var(--bk-black); }
+.bodular-add-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+.bodular-add-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--bk-white);
+  border: 2px solid var(--bk-black);
+  min-width: 200px;
+  z-index: 50;
+  display: none;
+}
+.bodular-add-menu.open { display: block; }
+
+.bodular-add-category { position: relative; }
+
+.bodular-add-cat-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--bk-black);
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bk-black);
+  cursor: pointer;
+}
+.bodular-add-category:last-child .bodular-add-cat-btn { border-bottom: none; }
+.bodular-add-cat-btn:hover,
+.bodular-add-category.open .bodular-add-cat-btn { background: var(--bk-bodular); }
+
+.bodular-add-submenu {
+  position: absolute;
+  top: -2px;
+  left: 100%;
+  background: var(--bk-white);
+  border: 2px solid var(--bk-black);
+  min-width: 230px;
+  z-index: 51;
+  display: none;
+}
+.bodular-add-category.open .bodular-add-submenu { display: block; }
+
+.bodular-add-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--bk-black);
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bk-black);
+  cursor: pointer;
+}
+.bodular-add-item:last-child { border-bottom: none; }
+.bodular-add-item:hover { background: var(--bk-bodular); }
+.bodular-add-item-hp {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: normal;
+  color: var(--bk-ink-mute);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.bodular-clear-btn {
+  background: var(--bk-white);
+  color: var(--bk-fast);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 16px;
+  border: 2px solid var(--bk-fast);
+  cursor: pointer;
+  border-radius: 0;
+}
+.bodular-clear-btn:hover { background: var(--bk-fast); color: var(--bk-white); }
+
+.bodular-record-btn {
+  background: var(--bk-white);
+  color: var(--bk-fast);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 16px;
+  border: 2px solid var(--bk-fast);
+  cursor: pointer;
+  border-radius: 0;
+}
+.bodular-record-btn:hover { background: var(--bk-fast); color: var(--bk-white); }
+.bodular-record-btn.recording {
+  background: var(--bk-fast);
+  color: var(--bk-white);
+  animation: bodular-record-pulse 1.2s ease-in-out infinite;
+}
+@keyframes bodular-record-pulse {
+  50% { opacity: 0.55; }
+}
+
+.bodular-cable-toggle-btn {
+  background: var(--bk-white);
+  color: var(--bk-black);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 16px;
+  border: 2px solid var(--bk-black);
+  cursor: pointer;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bodular-cable-toggle-btn kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(0,0,0,0.08);
+  padding: 1px 4px;
+}
+.bodular-cable-toggle-btn:hover { background: var(--bk-bodular); }
+.bodular-cable-toggle-btn.active { background: var(--bk-bodular); border-color: var(--bk-bodular-dk); }
+.bodular-cable-toggle-btn.active kbd { background: rgba(0,0,0,0.15); }
+
+.bodular-toolbar-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--bk-ink-mute);
+  letter-spacing: 0.03em;
+  margin-left: auto;
+}
+
+/* ── RACK ── */
+.bodular-rack {
+  background: #2a2a2a;
+  overflow: auto;
+  position: relative;
+  max-height: 70vh;
+}
+
+.bodular-rails {
+  position: relative;
+  z-index: 2;
+}
+
+.bodular-cable-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.bodular-empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.bodular-rail {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #1a1a1a;
+  min-height: 230px;
+}
+
+.bodular-rail-label {
+  flex: 0 0 22px;
+  background: #1a1a1a;
+  color: rgba(255,255,255,0.3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+/* ── MODULE FACEPLATE ── */
+.bodular-module {
+  background: var(--bk-canvas);
+  border-right: 1px solid var(--bk-black);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.bodular-module-header {
+  background: var(--bk-black);
+  color: var(--bk-white);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border-bottom: 3px solid var(--bk-bodular);
+  cursor: move;
+  user-select: none;
+}
+
+.bodular-module.dragging-source { opacity: 0.35; }
+
+.bodular-module-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background: var(--bk-black);
+  color: var(--bk-white);
+  border: 2px solid var(--bk-bodular);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.bodular-module-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bodular-module-remove {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: var(--bk-white);
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.bodular-module-remove:hover { background: var(--bk-fast); border-color: var(--bk-fast); }
+
+.bodular-module-body {
+  flex: 1;
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bodular-module-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+}
+
+/* top-pinned stack (selector/play buttons) — sits flush at the top of the
+   module body instead of being centered as part of one big group */
+.bodular-module-top {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+/* takes the remaining vertical space and centers its content (knobs) within
+   it, both horizontally and vertically */
+.bodular-module-center {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.bodular-module-center.row { flex-direction: row; justify-content: center; }
+
+/* ── KNOBS ── */
+.bodular-knob {
+  text-align: center;
+  cursor: ns-resize;
+  user-select: none;
+  width: 56px;
+}
+
+.bodular-knob-dial {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--bk-white);
+  border: 3px solid var(--bk-black);
+  position: relative;
+  margin: 0 auto 5px;
+}
+
+.bodular-knob-indicator {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 3px; height: 18px;
+  background: var(--bk-black);
+  transform-origin: 50% 0%;
+  transform: translateX(-50%) rotate(-135deg);
+}
+
+.bodular-knob.active .bodular-knob-dial {
+  border-color: var(--bk-bodular-dk);
+  box-shadow: 0 0 0 3px var(--bk-bodular);
+}
+.bodular-knob.active .bodular-knob-indicator { background: var(--bk-bodular-dk); }
+
+.bodular-knob-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bk-ink-mute);
+}
+
+.bodular-knob-value {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--bk-black);
+}
+
+/* ── SAMPLE PLAYER ── */
+.bodular-sample-upload {
+  border: 1.5px dashed var(--bk-black);
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bk-white);
+  width: 100%;
+  box-sizing: border-box;
+}
+.bodular-sample-upload.dragging {
+  background: #f1e6ff;
+  border-color: var(--bk-bodular-dk);
+}
+.bodular-sample-filename {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--bk-ink-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 9ch;
+  margin: 0 auto;
+}
+
+.bodular-play-btn {
+  background: var(--bk-black);
+  color: var(--bk-white);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--bk-black);
+  padding: 8px 0;
+  width: 100%;
+  cursor: pointer;
+}
+.bodular-play-btn:hover:not(:disabled) { background: var(--bk-bodular); color: var(--bk-black); }
+.bodular-play-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.bodular-play-btn.playing { background: var(--bk-bodular-dk); border-color: var(--bk-bodular-dk); }
+/* compact variant: fixed width so swapping label text (e.g. ENABLE/STOP)
+   never resizes the button and shifts sibling controls */
+.bodular-play-btn.compact { width: 92px; flex-shrink: 0; }
+/* icon variant: just ▶/■, no label — small fixed square */
+.bodular-play-btn.icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.bodular-loop-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bk-ink-mute);
+  cursor: pointer;
+}
+.bodular-loop-toggle input { accent-color: var(--bk-bodular-dk); }
+
+/* ── VU METER (Output module) ── */
+.bodular-vu {
+  width: 100%;
+  height: 60px;
+  background: var(--bk-black);
+  display: block;
+}
+
+.bodular-scope {
+  width: 100%;
+  height: 80px;
+  background: var(--bk-black);
+  display: block;
+}
+
+/* ── JACKS ── */
+.bodular-jack-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--bk-black);
+  padding-top: 6px;
+}
+
+.bodular-jack-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.bodular-jack-row.out { justify-content: flex-end; }
+
+.bodular-jack-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bk-ink-mute);
+}
+
+.bodular-jack {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--bk-black);
+  background: #ccc;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+}
+.bodular-jack[data-dir="out"] { background: #555; }
+.bodular-jack.kind-cv { background: #ffd27a; }
+.bodular-jack.kind-cv[data-dir="out"] { background: #e08a00; }
+.bodular-jack:hover { transform: scale(1.15); }
+.bodular-jack.connected { border-color: var(--bk-bodular-dk); box-shadow: 0 0 0 2px var(--bk-bodular); }
+
+/* ── MISC MODULE BITS ── */
+.bodular-module-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--bk-ink-mute);
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.bodular-toggle-btn {
+  background: var(--bk-white);
+  color: var(--bk-black);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--bk-black);
+  padding: 5px 8px;
+  cursor: pointer;
+  align-self: center;
+  /* fixed width so cycling labels (SINE/SQUARE/SAWTOOTH, UP/DOWN/PING/RAND,
+     WHITE/PINK/BROWN, ...) never resizes the button and shifts neighbors */
+  width: 72px;
+  flex-shrink: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bodular-toggle-btn:hover { background: var(--bk-bodular); }
+/* full-width variant: button width is set by the row, not by its label, so
+   cycling text never causes a shift — same fix as .bodular-play-btn's default */
+.bodular-toggle-btn.full { width: 100%; }
+
+.bodular-clock-led {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3a1a55;
+  border: 2px solid var(--bk-black);
+  margin-bottom: 8px;
+}
+.bodular-clock-led.on {
+  background: var(--bk-bodular);
+  box-shadow: 0 0 8px var(--bk-bodular);
+}
+
+.bodular-arp-leds {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .bodular-tool-name { font-size: 24px; }
+  .bodular-toolbar-hint { display: none; }
+  .bodular-add-submenu {
+    position: static;
+    left: auto;
+    top: auto;
+    border: none;
+    border-top: 1px solid var(--bk-black);
+    min-width: 0;
+  }
+}

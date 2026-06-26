@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beatbox Kit — Tools for Beatboxers</title>
+  <meta name="description"
+    content="Beatbox Kit is a suite of tools built for beatboxers. Analyze your timing, track your improvement, and lock in your groove.">
+  <link rel="stylesheet" href="styles/bk-global.css">
+</head>
+
+<body>
+
+  <!-- TOP BANNER -->
+  <div class="bk-top-banner">
+    <a href="/" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
+    <a href="/baudit/" class="bk-banner-cta">Try Baudit →</a>
+  </div>
+
+  <!-- SITE NAV -->
+  <nav class="bk-nav" aria-label="Site navigation">
+    <a href="/" class="bk-nav-link active">Home</a>
+    <a href="#about" class="bk-nav-link">About</a>
+    <div class="bk-nav-dropdown-wrap">
+      <button class="bk-nav-dropdown-btn" id="tools-dropdown-btn">
+        All Tools <span class="bk-nav-dropdown-arrow">▾</span>
+      </button>
+      <div class="bk-nav-dropdown" id="tools-dropdown">
+        <a href="/baudit/" class="bk-nav-dropdown-item baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <button class="bk-hamburger" id="bk-hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="bk-mobile-nav" id="bk-mobile-nav">
+    <a href="/">Home</a>
+    <div class="bk-mobile-tools-wrap">
+      <button class="bk-mobile-tools-btn" id="bk-mobile-tools-btn">
+        All Tools <span class="bk-mobile-tools-arrow">▾</span>
+      </button>
+      <div class="bk-mobile-tools-sub" id="bk-mobile-tools-sub">
+        <a href="/baudit/" class="baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bodular">Bodular — Modular</a>
+      </div>
+    </div>
+    <a href="#about">About</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <div class="lp-hero-kicker">Built for beatboxers</div>
+        <h1 class="lp-hero-title">
+          The kit for all<br>
+          <em>beatboxers</em>
+        </h1>
+        <p class="lp-hero-sub">
+          Beatbox Kit is a growing suite of tools designed for beatboxers. 
+        </p>
+        <div class="lp-hero-actions">
+          <a href="/baudit/" class="bk-btn bk-btn-baudit">▶ Open Baudit</a>
+          <a href="#tools" class="bk-btn bk-btn-secondary">See All Tools</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="bk-rule">
+
+  <!-- TOOLS SECTION -->
+  <div class="lp-section-label">
+    <div class="bk-eyebrow baudit" id="tools">TOOLS</div>
+  </div>
+
+  <div class="lp-tools">
+
+    <!-- BAUDIT RIBBON CARD -->
+    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
+      <span class="bk-sticker-new">NEW!</span>
+      BAUDIT — BEATBOX AUDIT
+    </div>
+    <div class="lp-tool-card">
+      <div class="lp-tool-left">
+        <div class="lp-tool-name">
+          Baudit
+        </div>
+        <p class="lp-tool-desc">
+          Upload or record up to 2 minutes of beatbox audio. Baudit detects your average BPM, maps every beat, and flags
+          exactly where your timing rushes ahead or drags behind so you know what to fix.
+        </p>
+        <ul class="lp-tool-features">
+          <li>Automatic BPM detection from your waveform</li>
+          <li>Beat-by-beat timing drift analysis</li>
+          <li>Too-fast and too-slow markers on a timeline</li>
+          <li>Quick-listen to any flagged moment</li>
+          <li>Compare two takes side-by-side</li>
+        </ul>
+        <a href="/baudit/" class="bk-btn bk-btn-primary">Open Baudit →</a>
+      </div>
+      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
+        <canvas id="baudit-lissajous"
+          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
+      </div>
+    </div>
+
+    <!-- BAMPLER RIBBON CARD -->
+    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
+      <span class="bk-sticker-new orange">NEW!</span>
+      BAMPLER — BEATBOX SAMPLER
+    </div>
+    <div class="lp-tool-card">
+      <div class="lp-tool-left orange">
+        <div class="lp-tool-name">
+          Bampler
+        </div>
+        <p class="lp-tool-desc">
+          Upload or record up to 2 minutes of beatbox audio. Bampler is a general sampler tool created for Beatbox Kit. Slice up your routines, or some of your favorite beatboxer's beats.
+        </p>
+        <ul class="lp-tool-features">
+          <li>Play 16  reassignable pads with your keyboard</li>
+          <li>One-Shot and Lock per pad</li>
+          <li>Sample length editing</li>
+          <li>Auto Chop feature</li>
+          <li>Record from your mic directly to a pad</li>
+        </ul>
+        <a href="/bampler/" class="bk-btn bk-btn-primary orange">Open Bampler →</a>
+      </div>
+      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
+        <canvas id="bampler-lissajous"
+          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
+      </div>
+    </div>
+
+
+        <!-- BRANULAR RIBBON CARD -->
+    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
+      <span class="bk-sticker-new cyan">NEW!</span>
+      BRANULAR — GRANULAR SYNTHESIZER + SAMPLING + SEQUENCER 
+    </div>
+    <div class="lp-tool-card">
+      <div class="lp-tool-left cyan">
+        <div class="lp-tool-name">
+          Branular
+        </div>
+        <p class="lp-tool-desc">
+          Upload up to three audio files (long ones get a quick 2-minute trim picker) and let Branular pull grains for you, or drag the waveform yourself to scan and spray grains live. Build evolving sequences across multiple rows, lock the keepers, and morph it all with onboard effects.
+        </p>
+        <ul class="lp-tool-features">
+          <li>16-step tracker sequencer with percussion-biased random grains</li>
+          <li>Up to 3 audio tracks, gathered and locked independently</li>
+          <li>Scrub mode — drag the waveform to scan and spray grains live</li>
+          <li>Per-step Lock, FX toggle, and copy/paste between steps</li>
+          <li>Built-in effects board, adjustable BPM, and record-to-file</li>
+        </ul>
+        <a href="/branular/" class="bk-btn bk-btn-primary cyan">Open Branular →</a>
+      </div>
+      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
+        <canvas id="branular-lissajous"
+          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="bk-rule">
+
+  <!-- ABOUT SECTION -->
+  <section class="lp-about" id="about">
+    <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX
+      KIT</div>
+    <div class="lp-about-inner">
+      <div>
+        <h2>Built for the craft.</h2>
+        <p>
+          Beatbox Kit exists because it's fun to get better at beatboxing. Create an analytical approach to improving your routines with a tool kit developed specifically for beatboxers.
+        </p>
+      </div>
+      <div>
+        <h2>Free to use.</h2>
+        <p>
+          All tools in Beatbox Kit are made for the community. There's no mandatory subscription for Beatbox Kit.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bk-footer">
+    <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
+  </footer>
+
+  <script src="../js/homepage-col-animation.js" defer></script>
+  <script src="../js/navbar-stuff.js" defer></script>
+</body>
+
+</html>

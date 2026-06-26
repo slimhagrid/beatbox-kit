@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baudit — Beatbox Timing Audit · Beatbox Kit</title>
+  <meta name="description"
+    content="Upload or record your beatbox audio. Baudit detects your BPM, maps every beat, and shows exactly where you rush or drag.">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../styles/bk-global.css">
+  <!-- Baudit-specific styles -->
+  <link rel="stylesheet" href="../styles/baudit.css">
+</head>
+
+<body>
+
+    <!-- TOP BANNER -->
+  <div class="bk-top-banner">
+    <a href="/" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
+    <a href="/bampler/" class="bk-banner-cta orange">Try Bampler →</a>
+  </div>
+
+  <!-- SITE NAV -->
+  <nav class="bk-nav" aria-label="Site navigation">
+    <a href="/" class="bk-nav-link">Home</a>
+    <a href="#about" class="bk-nav-link">About</a>
+    <div class="bk-nav-dropdown-wrap">
+      <button class="bk-nav-dropdown-btn active" id="tools-dropdown-btn">
+        All Tools <span class="bk-nav-dropdown-arrow">▾</span>
+      </button>
+      <div class="bk-nav-dropdown" id="tools-dropdown">
+        <a href="/baudit/" class="bk-nav-dropdown-item baudit active">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <button class="bk-hamburger" id="bk-hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="bk-mobile-nav" id="bk-mobile-nav">
+    <a href="/">Home</a>
+    <div class="bk-mobile-tools-wrap">
+      <button class="bk-mobile-tools-btn" id="bk-mobile-tools-btn">
+        All Tools <span class="bk-mobile-tools-arrow">▾</span>
+      </button>
+      <div class="bk-mobile-tools-sub" id="bk-mobile-tools-sub">
+        <a href="/baudit/" class="baudit">Baudit — Timing Audit</a>
+        <a href="/bampler/" class="bampler">Bampler — Sampler</a>
+        <a href="/branular/" class="branular">Branular — Synthesizer</a>
+        <a href="/bodular/" class="bodular">Bodular — Modular</a>
+      </div>
+    </div>
+    <a href="#about">About</a>
+  </nav>
+
+  <!-- HIDDEN INPUTS -->
+  <input type="file" id="file-input" accept="audio/*" style="display:none">
+  <input type="file" id="compare-file-input" accept="audio/*" style="display:none">
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <div class="lp-hero-kicker">Beatbox Audit</div>
+        <h1 class="lp-hero-title">
+          TOOL 01:<br>
+          <em>Baudit</em>
+        </h1>
+        <p class="lp-hero-sub">
+          Great for refining your routines. Compare your recordings, see your progress, level up.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="bk-rule">
+
+  <!-- BAUDIT PAGE -->
+  <div class="baudit-page">
+
+    <!-- Tool identity bar -->
+    <div class="baudit-tool-header">
+      <div>
+        <div class="baudit-tool-name">BAUDIT</div>
+        <div class="baudit-tool-desc">Upload or record your beatbox routine. See where your timing can improve.
+          <br>Baudit is a work in progress, there may be glitches/oddities.
+        </div>
+      </div>
+    </div>
+
+    <!-- App shell -->
+    <div class="baudit-shell">
+
+      <!-- Shell title bar -->
+      <div class="baudit-shell-bar">
+        <span class="baudit-shell-title" id="session-name">no session loaded</span>
+        <span class="baudit-shell-status" id="shell-status">READY</span>
+      </div>
+
+      <!-- App body -->
+      <div class="baudit-body">
+
+        <!-- UPLOAD PANEL -->
+        <div class="upload-panel" id="upload-panel">
+          <button class="btn-reset" id="btn-reset" title="Clear and start over" aria-label="Start over">↺ Start
+            Over</button>
+
+          <canvas id="upload-icon-canvas" width="20" height="20"></canvas>
+          <div id="upload-title">Drop your beat here — or record live</div>
+          <div id="upload-sub">MP3, WAV, OGG · Max 2 minutes</div>
+          <div class="upload-actions">
+            <button class="btn-upload" id="btn-upload">Upload Audio</button>
+            <button class="btn-record" id="btn-record">
+              <span id="rec-label">Record</span>
+            </button>
+          </div>
+          <div id="rec-timer" style="display:none;">
+            ⏺ <span id="rec-time-display">0:00</span> / 2:00
+          </div>
+          <div id="processing-indicator" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px;">
+              <div class="spinner"></div>
+              <span id="processing-msg">Analysing audio…</span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATS ROW (hidden until analysis) -->
+        <div class="stats-row" id="stats-row" style="display:none;">
+          <div class="stat-card">
+            <div class="stat-value accent" id="stat-bpm">—</div>
+            <div class="stat-label">Avg BPM</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-issues">—</div>
+            <div class="stat-label">Timings</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value yellow" id="stat-drift">—</div>
+            <div class="stat-label">Max Drift</div>
+          </div>
+        </div>
+
+        <!-- COMPARE STATS ROW (hidden until compare loaded) -->
+        <div class="stats-row compare-stats-row" id="compare-stats-row" style="display:none;">
+          <div class="stat-card">
+            <div class="stat-value accent" id="cmp-stat-bpm">—</div>
+            <div class="stat-label">Avg BPM</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="cmp-stat-issues">—</div>
+            <div class="stat-label">Timings</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value yellow" id="cmp-stat-drift">—</div>
+            <div class="stat-label">Max Drift</div>
+          </div>
+        </div>
+
+        <!-- COMPARE TOGGLE (hidden until analysis) -->
+        <div class="compare-toggle-row" id="compare-toggle-row" style="display:none;">
+          <div style="flex:1;min-width:120px;">
+            <label class="toggle-label">
+              Compare Mode
+              <span class="toggle-sub">Upload a 2nd take to compare side-by-side</span>
+            </label>
+          </div>
+          <label class="toggle-switch" style="position:relative;display:inline-block;">
+            <input type="checkbox" id="compare-toggle">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+          <span class="compare-badge" id="compare-badge">Disabled</span>
+          <button class="btn-secondary" id="compare-upload-btn" style="display:none;">Upload Audio</button>
+          <button class="btn-record btn-record-cmp" id="compare-record-btn" style="display:none;">
+            <span id="cmp-rec-label">Record</span>
+          </button>
+          <span id="cmp-rec-timer" style="display:none;">⏺ <span id="cmp-rec-time">0:00</span></span>
+        </div>
+
+        <!-- TIMELINE PANEL (hidden until analysis) -->
+        <div class="timeline-panel" id="timeline-panel" style="display:none;">
+          <div class="timeline-controls">
+            <div class="analysis-title">
+              Timing Timeline
+              <span class="badge badge-teal">Analyzed</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="play-btn" id="play-btn" title="Play / Pause (Spacebar)">▶</button>
+              <div class="track-selector" id="track-selector" style="display:none;">
+                <label class="track-check"><input type="checkbox" id="play-track-1" checked><span>1</span></label>
+                <label class="track-check"><input type="checkbox" id="play-track-2" checked><span>2</span></label>
+                <button class="timeline-restart-btn" id="timeline-restart-btn"
+                  title="Restart both tracks to 0:00">↺</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary track -->
+          <div class="track-label-row" id="primary-track-label">
+            <span>Primary</span>
+            <span class="track-time-info"><span id="playhead-time">0:00</span> / <span
+                id="total-time">0:00</span></span>
+          </div>
+          <canvas id="timeline-canvas"></canvas>
+          <div class="timeline-ruler" id="timeline-ruler">
+            <span class="ruler-tick">0:00</span>
+            <span class="ruler-tick" id="ruler-q1"></span>
+            <span class="ruler-tick" id="ruler-mid"></span>
+            <span class="ruler-tick" id="ruler-q3"></span>
+            <span class="ruler-tick" id="ruler-end"></span>
+          </div>
+
+          <!-- Compare track (hidden unless compare on) -->
+          <div id="compare-wave-wrap" style="display:none;">
+            <div class="track-label-row">
+              <span>2nd Take (comparison)</span>
+              <span class="track-time-info"><span id="cmp-playhead-time">0:00</span> / <span
+                  id="cmp-total-time">0:00</span></span>
+            </div>
+            <canvas id="compare-canvas"></canvas>
+            <div class="timeline-ruler" id="compare-ruler">
+              <span class="ruler-tick">0:00</span>
+              <span class="ruler-tick" id="cmp-ruler-q1"></span>
+              <span class="ruler-tick" id="cmp-ruler-mid"></span>
+              <span class="ruler-tick" id="cmp-ruler-q3"></span>
+              <span class="ruler-tick" id="cmp-ruler-end"></span>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--bk-fast);"></div>
+              Too Fast
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--bk-slow);"></div>
+              Too Slow
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--bk-onbeat);"></div>
+              On Beat
+            </div>
+          </div>
+        </div>
+
+        <!-- ISSUES GRID (hidden until analysis) -->
+        <div class="table-panel" id="table-panel" style="display:none;">
+          <div class="table-header">
+            <span class="table-header-title">Timings</span>
+            <span class="issues-count" id="issues-count-label">—</span>
+          </div>
+          <div class="sensitivity-wrap" id="sensitivity-wrap" style="display:none;">
+            <span class="sensitivity-label">Min deviation: <span id="sensitivity-val">0</span>ms</span>
+            <input type="range" id="sensitivity-slider" class="sensitivity-slider" min="0" max="500" value="0" step="1">
+          </div>
+          <div class="issues-pager" id="issues-pager" style="display:none;">
+            <button class="issues-page-btn active" id="issues-page-1">1</button>
+            <button class="issues-page-btn" id="issues-page-2">2</button>
+          </div>
+          <div id="issues-grid" class="issues-grid"></div>
+          <div id="no-issues-msg" style="display:none;">
+            ✓ No timing issues — your groove is locked in!
+          </div>
+        </div>
+
+      </div><!-- /baudit-body -->
+    </div><!-- /baudit-shell -->
+
+  </div><!-- /baudit-page -->
+  <hr class="bk-rule">
+  <!-- ABOUT SECTION -->
+  <section class="lp-about" id="about">
+    <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX
+      KIT</div>
+    <div class="lp-about-inner">
+      <div>
+        <h2>Built for the craft.</h2>
+        <p>
+          Beatbox Kit exists because it's fun to get better at beatboxing. Create an analytical approach to improving your routines with a tool kit developed specifically for beatboxers.
+        </p>
+      </div>
+      <div>
+        <h2>Free to use.</h2>
+        <p>
+          All tools in Beatbox Kit are made for the community. There's no mandatory subscription for Beatbox Kit. 
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bk-footer">
+    <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
+  </footer>
+
+  <!-- GSAP (deferred — non-blocking) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <!-- Baudit JS (canvas + engine share no changes, animations updated below) -->
+  <script src="../js/baudit/baudit-canvas.js" defer></script>
+  <script src="../js/baudit/baudit-engine.js" defer></script>
+  <script src="../js/baudit/baudit-upload-animation.js" defer></script>
+  <script src="../js/navbar-stuff.js" defer></script>
+  <script>
+
+    // Shell status updates
+    function setShellStatus(text) {
+      const el = document.getElementById('shell-status');
+      if (el) el.textContent = text;
+    }
+
+    // Observe processing indicator to update shell status bar
+    const procObs = new MutationObserver(() => {
+      const ind = document.getElementById('processing-indicator');
+      const msg = document.getElementById('processing-msg');
+      if (ind && ind.style.display !== 'none') {
+        setShellStatus(msg ? msg.textContent.toUpperCase() : 'PROCESSING…');
+      }
+    });
+    const procEl = document.getElementById('processing-indicator');
+    if (procEl) procObs.observe(procEl, { attributes: true, childList: true, subtree: true });
+
+    // Update status once results appear
+    const statsObs = new MutationObserver(() => {
+      const row = document.getElementById('stats-row');
+      if (row && row.style.display !== 'none') setShellStatus('ANALYSIS COMPLETE');
+    });
+    const statsEl = document.getElementById('stats-row');
+    if (statsEl) statsObs.observe(statsEl, { attributes: true });
+
+    // Init Baudit engine (defined in baudit-engine.js)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof Baudit !== 'undefined') Baudit.init();
+    });
+
+    // Fallback if DOMContentLoaded already fired (defer scripts)
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(() => { if (typeof Baudit !== 'undefined') Baudit.init(); }, 0);
+    }
+  </script>
+
+</body>
+
+</html>
