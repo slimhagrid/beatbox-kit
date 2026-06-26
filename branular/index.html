@@ -268,14 +268,7 @@
   <script src="../js/branular/branular-stuff.js" defer></script>
   <script src="../js/branular/branular-upload-animation.js" defer></script>
   <script src="../js/navbar-stuff.js" defer></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof Branular !== 'undefined') Branular.init();
-    });
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(() => { if (typeof Branular !== 'undefined') Branular.init(); }, 0);
-    }
-  </script>
+  <script src="../js/branular/branular-init.js" defer></script>
 
 </body>
 

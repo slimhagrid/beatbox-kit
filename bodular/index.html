@@ -210,14 +210,7 @@
   <!-- Visuals -->
   <script src="../js/bodular/modules/visuals/oscilloscope.js" defer></script>
   <script src="../js/navbar-stuff.js" defer></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof Bodular !== 'undefined') Bodular.init();
-    });
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(() => { if (typeof Bodular !== 'undefined') Bodular.init(); }, 0);
-    }
-  </script>
+  <script src="../js/bodular/bodular-init.js" defer></script>
 </body>
 
 </html>

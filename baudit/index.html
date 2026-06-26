@@ -307,52 +307,12 @@
     <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
   </footer>
 
-  <!-- GSAP (deferred — non-blocking) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-
   <!-- Baudit JS (canvas + engine share no changes, animations updated below) -->
   <script src="../js/baudit/baudit-canvas.js" defer></script>
   <script src="../js/baudit/baudit-engine.js" defer></script>
   <script src="../js/baudit/baudit-upload-animation.js" defer></script>
   <script src="../js/navbar-stuff.js" defer></script>
-  <script>
-
-    // Shell status updates
-    function setShellStatus(text) {
-      const el = document.getElementById('shell-status');
-      if (el) el.textContent = text;
-    }
-
-    // Observe processing indicator to update shell status bar
-    const procObs = new MutationObserver(() => {
-      const ind = document.getElementById('processing-indicator');
-      const msg = document.getElementById('processing-msg');
-      if (ind && ind.style.display !== 'none') {
-        setShellStatus(msg ? msg.textContent.toUpperCase() : 'PROCESSING…');
-      }
-    });
-    const procEl = document.getElementById('processing-indicator');
-    if (procEl) procObs.observe(procEl, { attributes: true, childList: true, subtree: true });
-
-    // Update status once results appear
-    const statsObs = new MutationObserver(() => {
-      const row = document.getElementById('stats-row');
-      if (row && row.style.display !== 'none') setShellStatus('ANALYSIS COMPLETE');
-    });
-    const statsEl = document.getElementById('stats-row');
-    if (statsEl) statsObs.observe(statsEl, { attributes: true });
-
-    // Init Baudit engine (defined in baudit-engine.js)
-    document.addEventListener('DOMContentLoaded', () => {
-      if (typeof Baudit !== 'undefined') Baudit.init();
-    });
-
-    // Fallback if DOMContentLoaded already fired (defer scripts)
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(() => { if (typeof Baudit !== 'undefined') Baudit.init(); }, 0);
-    }
-  </script>
+  <script src="../js/baudit/baudit-init.js" defer></script>
 
 </body>
 
