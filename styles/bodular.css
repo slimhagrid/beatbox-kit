@@ -338,6 +338,7 @@
   gap: 6px;
   border-bottom: 3px solid var(--bk-bodular);
   cursor: move;
+  touch-action: none;
   user-select: none;
 }
 
@@ -430,6 +431,7 @@
   cursor: ns-resize;
   user-select: none;
   width: 56px;
+  touch-action: none;
 }
 
 .bodular-knob-dial {
@@ -587,6 +589,7 @@
   flex-shrink: 0;
   cursor: pointer;
   position: relative;
+  touch-action: none;
 }
 .bodular-jack[data-dir="out"] { background: #555; }
 .bodular-jack.kind-cv { background: #ffd27a; }
@@ -660,5 +663,14 @@
     border: none;
     border-top: 1px solid var(--bk-black);
     min-width: 0;
+  }
+
+  /* enlarge jack tap targets for touch without changing the visual dot size */
+  .bodular-jack-rows { gap: 8px; }
+  .bodular-jack-row { gap: 12px; }
+  .bodular-jack::before {
+    content: '';
+    position: absolute;
+    inset: -11px;
   }
 }

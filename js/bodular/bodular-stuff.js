@@ -70,7 +70,7 @@ window.Bodular = (function () {
       onChange(value);
     }
 
-    knobEl.addEventListener('mousedown', (e) => {
+    knobEl.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       activeKnobDrag = { startY: e.clientY, startVal: value, min, max, setValue, knobEl };
@@ -82,14 +82,14 @@ window.Bodular = (function () {
   }
 
   function initGlobalKnobDrag() {
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
       if (!activeKnobDrag) return;
       const { startY, startVal, min, max, setValue } = activeKnobDrag;
       const dy = startY - e.clientY;
       const newVal = startVal + (dy / 150) * (max - min);
       setValue(newVal);
     });
-    window.addEventListener('mouseup', () => {
+    window.addEventListener('pointerup', () => {
       if (activeKnobDrag) {
         activeKnobDrag.knobEl.classList.remove('active');
         activeKnobDrag = null;
@@ -121,7 +121,7 @@ window.Bodular = (function () {
     lbl.textContent = label;
     if (dir === 'out') { row.appendChild(lbl); row.appendChild(jack); }
     else { row.appendChild(jack); row.appendChild(lbl); }
-    jack.addEventListener('mousedown', (e) => onJackMouseDown(e, moduleId, jackId, dir));
+    jack.addEventListener('pointerdown', (e) => onJackPointerDown(e, moduleId, jackId, dir));
     return { row, jackEl: jack };
   }
 
@@ -147,7 +147,7 @@ window.Bodular = (function () {
     return { node: analyser, stop() { stopped = true; if (raf) cancelAnimationFrame(raf); } };
   }
 
-  function onJackMouseDown(e, moduleId, jackId, dir) {
+  function onJackPointerDown(e, moduleId, jackId, dir) {
     e.preventDefault();
     e.stopPropagation();
     if (dir === 'in') {
@@ -178,14 +178,15 @@ window.Bodular = (function () {
   }
 
   function initGlobalCableDrag() {
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
       if (!dragCable) return;
       dragCable.pos = getRackRelativePos(e);
       drawCables();
     });
-    window.addEventListener('mouseup', (e) => {
+    window.addEventListener('pointerup', (e) => {
       if (!dragCable) return;
-      const target = e.target.closest('.bodular-jack[data-dir="in"]');
+      const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
+      const target = elAtPoint && elAtPoint.closest('.bodular-jack[data-dir="in"]');
       if (target) {
         createConnection(dragCable.fromModuleId, dragCable.fromJackId, target.dataset.module, target.dataset.jack, dragCable.color);
       }
@@ -437,11 +438,11 @@ window.Bodular = (function () {
   }
 
   function initGlobalModuleMoveDrag() {
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
       if (!moveDrag) return;
       positionGhost(e.clientX, e.clientY);
     });
-    window.addEventListener('mouseup', (e) => {
+    window.addEventListener('pointerup', (e) => {
       if (!moveDrag) return;
       finalizeModuleMove(e.clientX, e.clientY);
     });
@@ -466,7 +467,7 @@ window.Bodular = (function () {
     removeBtn.textContent = '×';
     removeBtn.title = 'Remove module';
     removeBtn.addEventListener('click', () => removeModule(instance.id));
-    header.addEventListener('mousedown', (e) => startModuleMove(e, instance.id));
+    header.addEventListener('pointerdown', (e) => startModuleMove(e, instance.id));
     header.appendChild(title);
     header.appendChild(removeBtn);
 
@@ -697,7 +698,7 @@ window.Bodular = (function () {
     // hit-testing lives on the rack (not the canvas) since the canvas is
     // pointer-events:none — modules sit visually under the cable overlay but
     // still need to receive clicks for their jacks/knobs/buttons.
-    rackEl.addEventListener('mousedown', (e) => {
+    rackEl.addEventListener('pointerdown', (e) => {
       if (dragCable || moveDrag || !cablesVisible) return;
       if (e.target.closest('.bodular-jack, .bodular-knob, button, input, .bodular-module-header')) return;
       const pos = getRackRelativePos(e);
