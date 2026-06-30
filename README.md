@@ -48,6 +48,15 @@ Build a modular synth-style rack out of your beatbox samples using patch cables.
 
 **How to use it:** Open [`/bodular`](bodular/), click **+ Add Module** and pick modules from Sources, Processing, Utility, Output, or Visuals to drop them on the rack. Upload a beatbox sample into a Sample Player module, then drag between module jacks to patch them together — patch a source into an Output module to hear sound. Press **C** (or the **Show Cables** button) to toggle cable visibility, and use **⏺** to record your patch to a file.
 
+### Bid2Baud — Video to Audio
+Convert a video of your beatbox routine into a clean MP3, fully on-device.
+- Converts MP4, MOV, or WebM video into a downloadable MP3, fully on-device
+- Lightweight mode: small download, decodes and encodes audio directly in the browser
+- Fast mode: loads ffmpeg.wasm for quicker processing on a good connection
+- Max 2 minutes per video
+
+**How to use it:** Open [`/bid2baud`](bid2baud/), choose **Lightweight** (smaller download, good for slow connections) or **Fast** (bigger download, faster processing) under Processing, then drag in or upload your video. Preview the result and **Download MP3** once it's ready.
+
 ## Status
 
 All tools are actively in development — you may run into glitches or rough edges. Feedback and bug reports are welcome.
