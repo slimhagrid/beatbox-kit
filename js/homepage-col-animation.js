@@ -93,3 +93,11 @@ lissajous("bodular-lissajous", {
   phaseY: 1.15,
   phaseOffset: Math.PI / 2,
 });
+
+lissajous("bid2baud-lissajous", {
+  a: 6.2, b: 6, steps: 900,
+  colors: ["#ff4d8d", "#c92763"],
+  tailAt: 0.09, fade: 0.05, margin: 0, speed: 0.002,
+  breathing: { rate: 0.23, depth: 0.05 },
+  phaseY: 6.15,
+});

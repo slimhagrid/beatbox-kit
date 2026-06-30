@@ -10,6 +10,7 @@
   <meta name="description"
     content="Beatbox Kit is a suite of tools built for beatboxers.">
   <link rel="stylesheet" href="styles/bk-global.css">
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 
 <body>
@@ -33,6 +34,7 @@
         <a href="./bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
         <a href="./branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
         <a href="./bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
+        <a href="./bid2baud/" class="bk-nav-dropdown-item bid2baud">Bid2Baud — Vid to Audio</a>
       </div>
     </div>
   </nav>
@@ -52,6 +54,7 @@
         <a href="./bampler/" class="bampler">Bampler — Sampler</a>
         <a href="./branular/" class="branular">Branular — Synthesizer</a>
         <a href="./bodular/" class="bodular">Bodular — Modular</a>
+        <a href="./bid2baud/" class="bid2baud">Bid2Baud — Vid to Audio</a>
       </div>
     </div>
     <a href="#about">About</a>
@@ -82,125 +85,73 @@
 
   <!-- TOOLS SECTION -->
   <div class="lp-section-label">
-    <div class="bk-eyebrow baudit" id="tools">TOOLS</div>
+    <div class="bk-eyebrow" id="tools">TOOLS</div>
   </div>
 
   <div class="lp-tools">
+    <div class="lp-tools-grid">
 
-    <!-- BAUDIT RIBBON CARD -->
-    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
-      <span class="bk-sticker-new">NEW!</span>
-      BAUDIT — BEATBOX AUDIT
-    </div>
-    <div class="lp-tool-card">
-      <div class="lp-tool-left">
-        <div class="lp-tool-name">
-          Baudit
+      <!-- BAUDIT -->
+      <a href="./baudit/" class="lp-tool-tile">
+        <div class="lp-tile-canvas-wrap">
+          <canvas id="baudit-lissajous" class="lp-tile-canvas"></canvas>
         </div>
-        <p class="lp-tool-desc">
-          Upload or record up to 2 minutes of beatbox audio. Baudit detects your average BPM, maps every beat, and flags
-          exactly where your timing rushes ahead or drags behind so you know what to fix.
-        </p>
-        <ul class="lp-tool-features">
-          <li>Automatic BPM detection from your waveform</li>
-          <li>Beat-by-beat timing drift analysis</li>
-          <li>Too-fast and too-slow markers on a timeline</li>
-          <li>Quick-listen to any flagged moment</li>
-          <li>Compare two takes side-by-side</li>
-        </ul>
-        <a href="./baudit/" class="bk-btn bk-btn-primary">Open Baudit →</a>
-      </div>
-      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
-        <canvas id="baudit-lissajous"
-          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
-      </div>
-    </div>
-
-    <!-- BAMPLER RIBBON CARD -->
-    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
-      <span class="bk-sticker-new orange">NEW!</span>
-      BAMPLER — BEATBOX SAMPLER
-    </div>
-    <div class="lp-tool-card">
-      <div class="lp-tool-left orange">
-        <div class="lp-tool-name">
-          Bampler
+        <div class="lp-tile-body baudit">
+          <div class="lp-tile-name"><span class="bk-sticker-new">NEW!</span> Baudit</div>
+          <p class="lp-tile-desc">Timing audit — detect your BPM and flag exactly where your timing rushes or drags.</p>
+          <span class="lp-tile-tag">TIMING AUDIT →</span>
         </div>
-        <p class="lp-tool-desc">
-          Upload or record up to 2 minutes of beatbox audio. Bampler is a general sampler tool created for Beatbox Kit. Slice up your routines, or some of your favorite beatboxer's beats.
-        </p>
-        <ul class="lp-tool-features">
-          <li>Play 16  reassignable pads with your keyboard</li>
-          <li>One-Shot and Lock per pad</li>
-          <li>Sample length editing</li>
-          <li>Auto Chop feature</li>
-          <li>Record from your mic directly to a pad</li>
-        </ul>
-        <a href="./bampler/" class="bk-btn bk-btn-primary orange">Open Bampler →</a>
-      </div>
-      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
-        <canvas id="bampler-lissajous"
-          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
-      </div>
-    </div>
+      </a>
 
-
-        <!-- BRANULAR RIBBON CARD -->
-    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
-      <span class="bk-sticker-new cyan">NEW!</span>
-      BRANULAR — GRANULAR SYNTHESIZER + SAMPLING + SEQUENCER 
-    </div>
-    <div class="lp-tool-card">
-      <div class="lp-tool-left cyan">
-        <div class="lp-tool-name">
-          Branular
+      <!-- BAMPLER -->
+      <a href="./bampler/" class="lp-tool-tile">
+        <div class="lp-tile-canvas-wrap">
+          <canvas id="bampler-lissajous" class="lp-tile-canvas"></canvas>
         </div>
-        <p class="lp-tool-desc">
-          Upload up to three audio files (long ones get a quick 2-minute trim picker) and let Branular pull grains for you, or drag the waveform yourself to scan and spray grains live. Build evolving sequences across multiple rows, lock the keepers, and morph it all with onboard effects.
-        </p>
-        <ul class="lp-tool-features">
-          <li>16-step tracker sequencer with percussion-biased random grains</li>
-          <li>Up to 3 audio tracks, gathered and locked independently</li>
-          <li>Scrub mode — drag the waveform to scan and spray grains live</li>
-          <li>Per-step Lock, FX toggle, and copy/paste between steps</li>
-          <li>Built-in effects board, adjustable BPM, and record-to-file</li>
-        </ul>
-        <a href="./branular/" class="bk-btn bk-btn-primary cyan">Open Branular →</a>
-      </div>
-      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
-        <canvas id="branular-lissajous"
-          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
-      </div>
-    </div>
-
-        <!-- BODULAR RIBBON CARD -->
-    <div class="bk-ribbon-title" style="border: 2px solid var(--bk-black); border-bottom: 1px solid var(--bk-black);">
-      <span class="bk-sticker-new violet">NEW!</span>
-      BODULAR — MODULAR BEATBOX BOARD
-    </div>
-    <div class="lp-tool-card">
-      <div class="lp-tool-left violet">
-        <div class="lp-tool-name">
-          Bodular
+        <div class="lp-tile-body orange">
+          <div class="lp-tile-name"><span class="bk-sticker-new orange">NEW!</span> Bampler</div>
+          <p class="lp-tile-desc">16-pad sampler — slice up routines, assign samples to keys, record from mic.</p>
+          <span class="lp-tile-tag">SAMPLER →</span>
         </div>
-        <p class="lp-tool-desc">
-          Add modules to the rack, then patch them together with cables. Upload your own beatbox samples to play through the rack and shape them with modular synth-style processing.
-        </p>
-        <ul class="lp-tool-features">
-          <li>Sources: Sample Player, LFO, Noise, Clock</li>
-          <li>Processing: VCA, VCF, Delay, Attenuverter, Envelope (ADSR)</li>
-          <li>Utility: Mult, Arpeggiator</li>
-          <li>Output: Mixer, Output — plus an Oscilloscope visual module</li>
-          <li>Cable-based patching with toggleable cable view and record-to-file</li>
-        </ul>
-        <a href="./bodular/" class="bk-btn bk-btn-primary violet">Open Bodular →</a>
-      </div>
-      <div class="lp-tool-right" style="padding:0; overflow:hidden; background:#000;">
-        <canvas id="bodular-lissajous"
-          style="width: 100%; height: 100%; min-height: 220px; display: block; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
-      </div>
-    </div>
+      </a>
 
+      <!-- BRANULAR -->
+      <a href="./branular/" class="lp-tool-tile">
+        <div class="lp-tile-canvas-wrap">
+          <canvas id="branular-lissajous" class="lp-tile-canvas"></canvas>
+        </div>
+        <div class="lp-tile-body cyan">
+          <div class="lp-tile-name"><span class="bk-sticker-new cyan">NEW!</span> Branular</div>
+          <p class="lp-tile-desc">Granular synth — spray grains from your audio, sequence them, add effects.</p>
+          <span class="lp-tile-tag">GRANULAR SYNTH →</span>
+        </div>
+      </a>
+
+      <!-- BODULAR -->
+      <a href="./bodular/" class="lp-tool-tile">
+        <div class="lp-tile-canvas-wrap">
+          <canvas id="bodular-lissajous" class="lp-tile-canvas"></canvas>
+        </div>
+        <div class="lp-tile-body violet">
+          <div class="lp-tile-name"><span class="bk-sticker-new violet">NEW!</span> Bodular</div>
+          <p class="lp-tile-desc">Modular board — patch modules together with cables and route your beatbox samples through them.</p>
+          <span class="lp-tile-tag">MODULAR →</span>
+        </div>
+      </a>
+
+      <!-- BID2BAUD -->
+      <a href="./bid2baud/" class="lp-tool-tile">
+        <div class="lp-tile-canvas-wrap">
+          <canvas id="bid2baud-lissajous" class="lp-tile-canvas"></canvas>
+        </div>
+        <div class="lp-tile-body pink">
+          <div class="lp-tile-name"><span class="bk-sticker-new pink">NEW!</span> Bid2Baud</div>
+          <p class="lp-tile-desc">Video to audio — drop in a video and extract a clean MP3, all on-device.</p>
+          <span class="lp-tile-tag">VID TO AUDIO →</span>
+        </div>
+      </a>
+
+    </div>
   </div>
 
   <hr class="bk-rule">

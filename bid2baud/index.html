@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bid2Baud — Video to Audio · Beatbox Kit</title>
+  <link rel="shortcut icon" type="image/x-icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/webclip.png">
+  <meta name="description"
+    content="Drop in an MP4, MOV, or WebM recording of your beatbox routine and pull out a clean MP3 — fully on-device, nothing uploaded.">
+
+  <script defer src="/_vercel/insights/script.js"></script>
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../styles/bk-global.css">
+  <!-- Bid2Baud-specific styles -->
+  <link rel="stylesheet" href="../styles/bid2baud.css">
+</head>
+
+<body>
+
+    <!-- TOP BANNER -->
+  <div class="bk-top-banner">
+    <a href="../" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
+    <a href="../bodular/" class="bk-banner-cta violet">Try Bodular →</a>
+  </div>
+
+  <!-- SITE NAV -->
+  <nav class="bk-nav" aria-label="Site navigation">
+    <a href="../" class="bk-nav-link">Home</a>
+    <a href="#about" class="bk-nav-link">About</a>
+    <div class="bk-nav-dropdown-wrap">
+      <button class="bk-nav-dropdown-btn active" id="tools-dropdown-btn">
+        All Tools <span class="bk-nav-dropdown-arrow">▾</span>
+      </button>
+      <div class="bk-nav-dropdown" id="tools-dropdown">
+        <a href="../baudit/" class="bk-nav-dropdown-item baudit">Baudit — Timing Audit</a>
+        <a href="../bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
+        <a href="../branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
+        <a href="../bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
+        <a href="../bid2baud/" class="bk-nav-dropdown-item bid2baud active">Bid2Baud — Vid to Audio</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <button class="bk-hamburger" id="bk-hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="bk-mobile-nav" id="bk-mobile-nav">
+    <a href="../">Home</a>
+    <div class="bk-mobile-tools-wrap">
+      <button class="bk-mobile-tools-btn" id="bk-mobile-tools-btn">
+        All Tools <span class="bk-mobile-tools-arrow">▾</span>
+      </button>
+      <div class="bk-mobile-tools-sub" id="bk-mobile-tools-sub">
+        <a href="../baudit/" class="baudit">Baudit — Timing Audit</a>
+        <a href="../bampler/" class="bampler">Bampler — Sampler</a>
+        <a href="../branular/" class="branular">Branular — Synthesizer</a>
+        <a href="../bodular/" class="bodular">Bodular — Modular</a>
+        <a href="../bid2baud/" class="bid2baud">Bid2Baud — Vid to Audio</a>
+      </div>
+    </div>
+    <a href="#about">About</a>
+  </nav>
+
+  <!-- HIDDEN INPUTS -->
+  <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/webm,video/*" style="display:none">
+
+  <!-- HERO -->
+  <section class="lp-hero">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <div class="lp-hero-kicker pink">Video to Audio</div>
+        <h1 class="lp-hero-title pink">
+          TOOL 05:<br>
+          <em>Bid2Baud</em>
+        </h1>
+        <p class="lp-hero-sub">
+          Recorded yourself on a phone instead of a mic? Drop in the video and pull out a clean MP3.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="bk-rule">
+
+  <!-- BID2BAUD PAGE -->
+  <div class="bid2baud-page">
+
+    <!-- Tool identity bar -->
+    <div class="bid2baud-tool-header">
+      <div>
+        <div class="bid2baud-tool-name">BID2BAUD</div>
+        <div class="bid2baud-tool-desc">Upload a video of your beatbox routine. Bid2Baud extracts the audio and gives you a downloadable MP3.
+          <br>Everything runs in your browser — your video is never uploaded anywhere.
+        </div>
+      </div>
+    </div>
+
+    <!-- App shell -->
+    <div class="bid2baud-shell">
+
+      <!-- Shell title bar -->
+      <div class="bid2baud-shell-bar">
+        <span class="bid2baud-shell-title" id="session-name">no file loaded</span>
+        <span class="bid2baud-shell-status" id="shell-status">READY</span>
+      </div>
+
+      <div class="format-note">
+        Supported formats: <strong>MP4</strong>, <strong>MOV</strong>, <strong>WebM</strong> · Max 2 minutes
+      </div>
+
+      <!-- App body -->
+      <div class="bid2baud-body">
+
+        <!-- ERROR MESSAGE (hidden until needed) -->
+        <div id="error-msg" style="display:none;"></div>
+
+        <!-- UPLOAD PANEL -->
+        <div class="upload-panel" id="upload-panel">
+          <button class="btn-reset" id="btn-reset" title="Clear and start over" aria-label="Start over">↺ Start
+            Over</button>
+
+          <canvas id="upload-icon-canvas" width="20" height="20"></canvas>
+          <div id="upload-title">Drop your video here</div>
+          <div id="upload-sub">MP4, MOV, WebM · Max 2 minutes</div>
+          <div class="mode-toggle-label">Processing:</div>
+          <div class="mode-toggle-desc" id="mode-toggle-desc"></div>
+          <div class="mode-toggle" id="mode-toggle">
+            <label class="mode-option">
+              <input type="radio" name="convert-mode" value="slow" checked>
+              <span>Lightweight</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="convert-mode" value="fast">
+              <span>Fast</span>
+            </label>
+          </div>
+          <div class="upload-actions">
+            <button class="btn-upload" id="btn-upload">Upload Video</button>
+          </div>
+          <div id="processing-indicator" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
+              <div class="spinner"></div>
+              <span id="processing-msg">Reading video…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WAVE PANEL (hidden until a file's duration is known) -->
+        <div class="wave-panel" id="wave-panel" style="display:none;">
+          <div class="wave-header">
+            <div class="wave-source">
+              <span class="wave-filename" id="wave-filename">—</span>
+              <span class="wave-filesize" id="wave-filesize">—</span>
+            </div>
+            <div class="wave-time">
+              <span id="wave-current-time">0:00</span> / <span id="wave-total-time">0:00</span>
+            </div>
+          </div>
+          <div class="wave-canvas-wrap">
+            <canvas id="wave-canvas"></canvas>
+            <div class="wave-encoding-overlay" id="wave-encoding-overlay" style="display:none;">
+              <div class="spinner spinner-light"></div>
+              <span>Finalizing MP3…</span>
+            </div>
+          </div>
+          <div class="wave-ruler">
+            <span class="ruler-tick">0:00</span>
+            <span class="ruler-tick" id="wave-ruler-q1"></span>
+            <span class="ruler-tick" id="wave-ruler-mid"></span>
+            <span class="ruler-tick" id="wave-ruler-q3"></span>
+            <span class="ruler-tick" id="wave-ruler-end"></span>
+          </div>
+        </div>
+
+        <!-- RESULT PANEL (hidden until conversion completes) -->
+        <div class="result-panel" id="result-panel" style="display:none;">
+          <div class="result-header">
+            <span class="result-title">MP3 Ready</span>
+            <span class="badge badge-pink" id="result-size-badge">—</span>
+          </div>
+          <div class="custom-player" id="custom-player">
+            <button class="player-play-btn" id="player-play-btn" aria-label="Play / Pause">▶</button>
+            <div class="player-scrub-wrap">
+              <div class="player-scrub-track" id="player-scrub-track">
+                <div class="player-scrub-fill" id="player-scrub-fill"></div>
+                <div class="player-scrub-handle" id="player-scrub-handle"></div>
+              </div>
+              <div class="player-time-row">
+                <span id="player-current-time">0:00</span>
+                <span id="player-total-time">0:00</span>
+              </div>
+            </div>
+          </div>
+          <audio id="result-audio" style="display:none;"></audio>
+          <div class="result-actions">
+            <a class="btn-download" id="btn-download" download>⬇ Download MP3</a>
+            <button class="btn-secondary" id="btn-convert-another">Convert Another</button>
+          </div>
+        </div>
+
+      </div><!-- /bid2baud-body -->
+    </div><!-- /bid2baud-shell -->
+
+  </div><!-- /bid2baud-page -->
+  <hr class="bk-rule">
+  <!-- ABOUT SECTION -->
+  <section class="lp-about" id="about">
+    <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX
+      KIT</div>
+    <div class="lp-about-inner">
+      <div>
+        <h2>Built for the craft.</h2>
+        <p>
+          Beatbox Kit exists because it's fun to get better at beatboxing. Create an analytical approach to improving your routines with a tool kit developed specifically for beatboxers.
+        </p>
+      </div>
+      <div>
+        <h2>Free to use.</h2>
+        <p>
+          All tools in Beatbox Kit are made for the community. There's no mandatory subscription for Beatbox Kit.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bk-footer">
+    <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
+  </footer>
+
+  <!-- lamejs (MP3 encoder) — loaded from jsdelivr, see CSP script-src in vercel.json -->
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <!-- Bid2Baud JS -->
+  <script src="../js/bid2baud/bid2baud-stuff.js" defer></script>
+  <script src="../js/bid2baud/bid2baud-upload-animation.js" defer></script>
+  <script src="../js/navbar-stuff.js" defer></script>
+
+</body>
+
+</html>
