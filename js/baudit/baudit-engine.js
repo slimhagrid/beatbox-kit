@@ -108,12 +108,14 @@ function trackBeats(envelope, fps, bpm) {
   mean /= N;
   const silenceThresh = mean * 0.4;
 
-  // Seed: strongest peak in the first 2 periods
-  let seedI = -1, seedV = silenceThresh;
-  const seedEnd = Math.min(N, Math.ceil(period * 2));
-  for (let i = 1; i < seedEnd - 1; i++) {
-    if (envelope[i] > seedV && envelope[i] >= envelope[i-1] && envelope[i] >= envelope[i+1]) {
-      seedV = envelope[i]; seedI = i;
+  // Seed: first peak that clears the threshold, searched across the WHOLE track.
+  // (Previously capped to the first 2 beat periods (~1-1.5s) — tracks with a quiet
+  // intro or a slightly delayed first hit would find no seed and silently return
+  // zero beats/issues with no error shown to the user.)
+  let seedI = -1;
+  for (let i = 1; i < N - 1; i++) {
+    if (envelope[i] > silenceThresh && envelope[i] >= envelope[i-1] && envelope[i] >= envelope[i+1]) {
+      seedI = i; break;
     }
   }
   if (seedI < 0) return [];
