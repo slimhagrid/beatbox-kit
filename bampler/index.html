@@ -100,7 +100,11 @@
 
       <!-- Shell title bar -->
       <div class="bampler-shell-bar">
-        <span class="bampler-shell-title" id="session-name">no session loaded</span>
+        <div class="shell-title-group">
+          <div class="slot-buttons-wrap" id="slot-buttons-wrap"></div>
+          <span class="bampler-shell-title" id="session-name">no session loaded</span>
+          <button class="btn-add-track" id="btn-add-track" title="Add another audio file (up to 3 total)" style="display:none;">+</button>
+        </div>
         <span class="bampler-shell-status" id="shell-status">READY</span>
       </div>
 
@@ -136,6 +140,7 @@
             <span class="wave-time-info">
               <span id="wave-time-cur">0:00</span> / <span id="wave-time-tot">0:00</span>
             </span>
+            <button class="wave-zoom-btn" id="wave-zoom-btn" title="Cycle zoom level (1X, 3X, 5X, 10X)">1X</button>
             <div class="sample-mode-wrap">
               <label class="toggle-switch">
                 <input type="checkbox" id="sample-mode-toggle">
@@ -157,6 +162,9 @@
             <span class="ruler-tick" id="ruler-q3"></span>
             <span class="ruler-tick" id="ruler-end"></span>
           </div>
+          <div class="wave-scrollbar" id="wave-scrollbar" style="display:none;">
+            <div class="wave-scrollbar-thumb" id="wave-scrollbar-thumb"></div>
+          </div>
         </div>
 
         <!-- PAD RECORD CONTROLS (hidden until audio loaded) -->
@@ -171,6 +179,7 @@
             <span id="pad-rec-timer" style="display:none;">⏺ <span id="pad-rec-time">0:00</span> / 2:00</span>
           </div>
           <button class="btn-auto-chop" id="btn-auto-chop" title="Randomly slice waveform into all unlocked pads">Auto Chop</button>
+          <button class="btn-auto-trim" id="btn-auto-trim" title="Randomly trim each loaded pad's sample shorter, within its current bounds" disabled>Auto Trim</button>
         </div>
 
         <!-- ASSIGN BAR (shown after pad recording stops) -->
@@ -189,10 +198,61 @@
           Click a pad or press its key to play. In Sample Mode, select a pad then drag the waveform to set its region. Click the key label on any pad to remap it.
         </div>
 
+        <!-- ADSR ENVELOPE POPUP -->
+        <div class="env-modal-overlay" id="env-modal-overlay" style="display:none;">
+          <div class="env-modal">
+            <div class="env-modal-header">
+              <span class="env-modal-title" id="env-modal-title">ENVELOPE — PAD 1</span>
+              <button class="env-modal-close" id="env-modal-close" title="Close">✕</button>
+            </div>
+            <div class="env-modal-body">
+              <canvas class="env-canvas" id="env-canvas" width="280" height="110"></canvas>
+              <div class="env-sliders">
+                <div class="env-slider-row">
+                  <label for="env-attack">ATTACK</label>
+                  <input type="range" id="env-attack" min="0" max="1000" step="5" value="80">
+                  <span class="env-val" id="env-attack-val">80ms</span>
+                </div>
+                <div class="env-slider-row">
+                  <label for="env-decay">DECAY</label>
+                  <input type="range" id="env-decay" min="0" max="1000" step="5" value="80">
+                  <span class="env-val" id="env-decay-val">80ms</span>
+                </div>
+                <div class="env-slider-row">
+                  <label for="env-sustain">SUSTAIN</label>
+                  <input type="range" id="env-sustain" min="0" max="100" step="1" value="100">
+                  <span class="env-val" id="env-sustain-val">100%</span>
+                </div>
+                <div class="env-slider-row">
+                  <label for="env-release">RELEASE</label>
+                  <input type="range" id="env-release" min="0" max="1000" step="5" value="80">
+                  <span class="env-val" id="env-release-val">80ms</span>
+                </div>
+              </div>
+            </div>
+            <div class="env-modal-footer">
+              <div class="env-scope-toggle">
+                <button class="env-scope-btn active" data-scope="this">THIS PAD</button>
+                <button class="env-scope-btn" data-scope="all">ALL PADS</button>
+              </div>
+              <div class="env-modal-actions">
+                <button class="env-reset-btn" id="env-reset-btn">Reset</button>
+                <button class="env-save-btn" id="env-save-btn">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /bampler-body -->
     </div><!-- /bampler-shell -->
 
   </div><!-- /bampler-page -->
+
+  <!-- PAD CONTEXT MENU -->
+  <div class="pad-context-menu" id="pad-context-menu" style="display:none;">
+    <button class="pad-context-item" id="pad-ctx-copy">Copy Pad</button>
+    <button class="pad-context-item" id="pad-ctx-paste">Paste Pad</button>
+  </div>
 
   <hr class="bk-rule">
 

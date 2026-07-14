@@ -9,6 +9,7 @@
   const TOTAL_PADS  = 16;
   const MAX_REC_SECS = 120;
   const DEFAULT_KEYS = ['a','s','d','f','j','k','l',';','z','x','c','v','n','m',',','.'];
+  const ZOOM_LEVELS  = [1, 3, 5, 10];
 
   // One distinct color per pad — used for waveform regions + mini-waveforms
   const PAD_COLORS = [
@@ -21,24 +22,39 @@
   // ── STATE ──────────────────────────────────────────────────────────────────
   let audioCtx   = null;
   let masterGain = null;
-  let masterBuffer   = null;  // full uploaded/recorded AudioBuffer
   let waveformPeaks  = null;  // { min, max }[] per canvas pixel column
   let padGridBuilt   = false;
   let initDone       = false;
 
+  // Multiple source audio files (up to 3). masterBuffer always mirrors
+  // tracks[activeTrackIdx].buffer so the waveform/scrub/playback code below
+  // can keep reading that one global unchanged — it only ever reflects
+  // whichever track is currently on screen. Each track: { buffer, name }.
+  // A pad's OWN audio is resolved via padSourceBuffer(pad), which follows
+  // pad.trackIdx — NOT masterBuffer — so a pad keeps playing correctly even
+  // after the user switches to a different track on screen.
+  const MAX_TRACKS = 3;
+  const tracks = [null, null, null];
+  let activeTrackIdx = 0;
+  let pendingTrackIdx = -1; // track slot [+] is currently uploading into, or -1
+  let masterBuffer = null;  // mirrors tracks[activeTrackIdx].buffer
+
   // 16 pad data objects
   const pads = Array.from({ length: TOTAL_PADS }, (_, i) => ({
-    type: 'slice',   // 'slice' = references masterBuffer, 'buffer' = owns its AudioBuffer
+    type: 'slice',   // 'slice' = references tracks[trackIdx].buffer, 'buffer' = owns its AudioBuffer
     startNorm: 0,
     endNorm:   0,
     hasSlice:  false,
-    buffer:    null, // AudioBuffer when type === 'buffer'
+    buffer:    null,  // AudioBuffer when type === 'buffer'
+    trackIdx:  0,      // which tracks[] slot a 'slice' pad was chopped from
     keyBinding: DEFAULT_KEYS[i],
     oneShot: false,  // true = plays to end on release; false = stops on key/click release
-    locked: false,   // true = auto-chop skips this pad
+    locked: false,   // true = auto-chop / auto-trim skip this pad
     // Fixed light envelope on every pad — just enough to kill click/clipping
     // noise at the start/end of a slice, not a user-tunable feature.
     adsr: { attack: 0.08, decay: 0.08, sustain: 1, release: 0.08 },
+    // Mini-waveform zoom/pan (view is always == [startNorm,endNorm] at zoomIdx 0)
+    zoomIdx: 0, viewStart: 0, viewSpan: 1,
   }));
 
   // Sample mode
@@ -75,14 +91,38 @@
   // RAF handle for live pad time + playhead tick
   let padRafHandle = null;
 
-  // Mini-waveform edge-drag state (sample mode)
+  // Mini-waveform edge-drag / pan state (sample mode)
   let miniDragPad     = -1;
-  let miniDragTarget  = null; // 'start' | 'end'
+  let miniDragTarget  = null; // 'start' | 'end' | 'pan-pending' | 'pan'
   let miniDragOriginX = 0;
   let miniDragOrigStart = 0;
   let miniDragOrigEnd   = 0;
-  let miniDragSpan    = 0;
+  let miniDragViewSpan  = 0;  // pad's view span at drag start — scales px deltas either way
+  let miniDragViewStartOrigin = 0;
   let miniDragWidth   = 0;
+
+  // Main waveform zoom/pan
+  let waveZoomIdx = 0;
+  let waveViewStart = 0;
+  let waveViewSpan  = 1;
+  let waveDragPending = false; // possible pan (non-sample-mode drag) awaiting movement threshold
+  let waveDragOriginX = 0;
+  let waveDragOriginViewStart = 0;
+  let waveDragMoved = false;
+
+  // Main waveform scrollbar drag
+  let scrollbarDragging = false;
+  let scrollbarDragOriginX = 0;
+  let scrollbarDragOriginStart = 0;
+
+  // ADSR envelope popup
+  let envActivePad = -1;       // pad the popup is currently open for (-1 = closed)
+  let envScope = 'this';       // 'this' | 'all' — which pads Save/Reset apply to
+  let envDraft = { attack: 0.08, decay: 0.08, sustain: 1, release: 0.08 }; // scratch values while dragging
+
+  // Pad right-click context menu (copy/paste sample content between pads)
+  let copiedPadData = null;   // clipboard entry, or null if nothing copied yet
+  let ctxMenuTargetPad = -1;  // pad the menu is currently open for, or -1
 
   // ── AUDIO CONTEXT ──────────────────────────────────────────────────────────
   function getAudioCtx() {
@@ -115,12 +155,22 @@
     if (el) el.textContent = text;
   }
 
+  // Resolves the AudioBuffer a pad's audio actually comes from — for a
+  // 'buffer' pad that's its own recording; for a 'slice' pad it's whichever
+  // TRACK it was chopped from (pad.trackIdx), NOT necessarily the track
+  // currently on screen (masterBuffer). Keeps every pad playing correctly
+  // regardless of which track the user has since switched to.
+  function padSourceBuffer(pad) {
+    if (pad.type === 'buffer') return pad.buffer;
+    const t = tracks[pad.trackIdx];
+    return t ? t.buffer : null;
+  }
+
   function getPadDuration(padIdx) {
     const pad = pads[padIdx];
     if (!pad.hasSlice) return 0;
-    if (pad.type === 'buffer' && pad.buffer) return (pad.endNorm - pad.startNorm) * pad.buffer.duration;
-    if (masterBuffer) return (pad.endNorm - pad.startNorm) * masterBuffer.duration;
-    return 0;
+    const buf = padSourceBuffer(pad);
+    return buf ? (pad.endNorm - pad.startNorm) * buf.duration : 0;
   }
 
   function resetPadTimeDisplay(padIdx) {
@@ -136,7 +186,7 @@
     Object.entries(activeSources).forEach(([idxStr, info]) => {
       const padIdx  = +idxStr;
       const dur     = getPadDuration(padIdx);
-      const elapsed = Math.min(now - info.startedAt, dur);
+      const elapsed = dur > 0 ? Math.min(now - info.startedAt, dur) : 0;
       const phNorm  = dur > 0 ? elapsed / dur : 0;
       const timeEl  = document.getElementById(`pad-time-${padIdx}`);
       if (timeEl) timeEl.textContent = `${elapsed.toFixed(1)} / ${dur.toFixed(1)}`;
@@ -147,21 +197,29 @@
   }
 
   // ── WAVEFORM PEAKS ─────────────────────────────────────────────────────────
-  function computePeaks(buffer, width) {
+  // startNorm/endNorm let this compute peaks for just the current zoomed view.
+  function computePeaks(buffer, width, startNorm = 0, endNorm = 1) {
     const data = buffer.getChannelData(0);
     const N    = data.length;
+    const s0   = Math.floor(startNorm * N);
+    const s1   = Math.floor(endNorm   * N);
+    const span = Math.max(1, s1 - s0);
     const out  = [];
     for (let x = 0; x < width; x++) {
-      const s = Math.floor(x / width * N);
-      const e = Math.floor((x + 1) / width * N);
+      const s = s0 + Math.floor(x / width * span);
+      const e = s0 + Math.floor((x + 1) / width * span);
       let mn = 0, mx = 0;
-      for (let i = s; i < e; i++) {
+      for (let i = s; i < e && i < N; i++) {
         if (data[i] < mn) mn = data[i];
         if (data[i] > mx) mx = data[i];
       }
       out.push({ min: mn, max: mx });
     }
     return out;
+  }
+
+  function waveMapNormToPx(norm, width) {
+    return ((norm - waveViewStart) / waveViewSpan) * width;
   }
 
   function resizeWaveCanvas() {
@@ -173,9 +231,82 @@
     canvas.width  = W;
     canvas.height = H;
     if (masterBuffer) {
-      waveformPeaks = computePeaks(masterBuffer, W);
+      waveformPeaks = computePeaks(masterBuffer, W, waveViewStart, waveViewStart + waveViewSpan);
       renderWave(playheadNorm);
     }
+  }
+
+  // Recomputes peaks + redraws for the current zoom/pan window — call whenever
+  // waveViewStart/waveViewSpan change (zoom button, drag-pan, scrollbar).
+  function refreshWaveView() {
+    const canvas = document.getElementById('bampler-wave-canvas');
+    if (!canvas || !masterBuffer) return;
+    const W = canvas.width;
+    if (!W) return;
+    waveformPeaks = computePeaks(masterBuffer, W, waveViewStart, waveViewStart + waveViewSpan);
+    renderWave(playheadNorm);
+    updateRulerForView();
+    renderWaveScrollbar();
+  }
+
+  function renderWaveScrollbar() {
+    const track = document.getElementById('wave-scrollbar');
+    const thumb = document.getElementById('wave-scrollbar-thumb');
+    if (!track || !thumb) return;
+    if (waveZoomIdx === 0) { track.style.display = 'none'; return; }
+    track.style.display = '';
+    thumb.style.left  = (waveViewStart * 100) + '%';
+    thumb.style.width = (waveViewSpan  * 100) + '%';
+  }
+
+  function cycleWaveZoom() {
+    if (!masterBuffer) return;
+    waveZoomIdx = (waveZoomIdx + 1) % ZOOM_LEVELS.length;
+    const level = ZOOM_LEVELS[waveZoomIdx];
+    if (level === 1) {
+      waveViewStart = 0;
+      waveViewSpan  = 1;
+    } else {
+      const newSpan = 1 / level;
+      const curCenter = waveViewStart + waveViewSpan / 2;
+      waveViewStart = Math.max(0, Math.min(curCenter - newSpan / 2, 1 - newSpan));
+      waveViewSpan  = newSpan;
+    }
+    const btn = document.getElementById('wave-zoom-btn');
+    if (btn) btn.textContent = `${level}X`;
+    refreshWaveView();
+  }
+
+  // Drag the scrollbar thumb (or click the track) to pan while zoomed —
+  // works regardless of Sample Mode, since dragging the waveform itself is
+  // reserved for region-editing while in Sample Mode.
+  function initWaveScrollbar() {
+    const track = document.getElementById('wave-scrollbar');
+    const thumb = document.getElementById('wave-scrollbar-thumb');
+    if (!track || !thumb) return;
+
+    thumb.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      scrollbarDragging = true;
+      scrollbarDragOriginX = e.clientX;
+      scrollbarDragOriginStart = waveViewStart;
+    });
+    track.addEventListener('mousedown', (e) => {
+      if (e.target === thumb || waveZoomIdx === 0) return;
+      const rect = track.getBoundingClientRect();
+      const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      waveViewStart = Math.max(0, Math.min(frac - waveViewSpan / 2, 1 - waveViewSpan));
+      refreshWaveView();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!scrollbarDragging) return;
+      const rect = track.getBoundingClientRect();
+      const normDelta = (e.clientX - scrollbarDragOriginX) / rect.width;
+      waveViewStart = Math.max(0, Math.min(scrollbarDragOriginStart + normDelta, 1 - waveViewSpan));
+      refreshWaveView();
+    });
+    window.addEventListener('mouseup', () => { scrollbarDragging = false; });
   }
 
   // ── WAVEFORM RENDER ────────────────────────────────────────────────────────
@@ -191,22 +322,29 @@
     ctx.fillStyle = '#f5f4ef';
     ctx.fillRect(0, 0, W, H);
 
-    // Pad regions (all pads that reference masterBuffer)
+    const mapX = (norm) => waveMapNormToPx(norm, W);
+
+    // Pad regions — only pads chopped from the TRACK currently on screen;
+    // pads from other tracks aren't shown here (their bounds don't correspond
+    // to this timeline).
     pads.forEach((pad, i) => {
-      if (!pad.hasSlice || pad.type !== 'slice') return;
+      if (!pad.hasSlice || pad.type !== 'slice' || pad.trackIdx !== activeTrackIdx) return;
       const isSel  = sampleModeOn && i === selectedPad;
       const color  = PAD_COLORS[i];
-      const sx = Math.floor(pad.startNorm * W);
-      const ex = Math.ceil(pad.endNorm * W);
-      const w  = Math.max(1, ex - sx);
+      const sx = mapX(pad.startNorm);
+      const ex = mapX(pad.endNorm);
+      if (ex < 0 || sx > W) return; // fully outside current view
+      const csx = Math.max(0, sx), cex = Math.min(W, ex);
+      const w = Math.max(0, cex - csx);
+      if (w <= 0) return;
       ctx.fillStyle = hexToRgba(color, isSel ? 0.28 : 0.16);
-      ctx.fillRect(sx, 0, w, H);
+      ctx.fillRect(csx, 0, w, H);
       // Top color bar
       ctx.fillStyle = hexToRgba(color, isSel ? 1.0 : 0.65);
-      ctx.fillRect(sx, 0, w, 4);
+      ctx.fillRect(csx, 0, w, 4);
     });
 
-    // Waveform amplitude bars
+    // Waveform amplitude bars — peaks are already computed for the current view
     if (waveformPeaks) {
       ctx.fillStyle = 'rgba(0,0,0,0.82)';
       for (let x = 0; x < W && x < waveformPeaks.length; x++) {
@@ -217,54 +355,76 @@
       }
     }
 
-    // Sample-mode markers for the selected pad
-    if (sampleModeOn && selectedPad >= 0) {
-      const pad = pads[selectedPad];
-      const sx  = Math.floor(pad.startNorm * W);
+    // Sample-mode markers for the selected pad — only meaningful for a 'slice'
+    // pad whose sample (if any) actually belongs to the track on screen.
+    // ('buffer' pads own their own recording and aren't edited here.)
+    const selPad = selectedPad >= 0 ? pads[selectedPad] : null;
+    if (sampleModeOn && selPad && selPad.type === 'slice' && (!selPad.hasSlice || selPad.trackIdx === activeTrackIdx)) {
+      const pad = selPad;
+      const sx  = mapX(pad.startNorm);
 
       // Start marker — green
-      ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth   = 2;
-      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
-      ctx.fillStyle   = '#22c55e';
-      ctx.fillRect(sx - 5, 0, 10, 8);
+      if (sx >= -10 && sx <= W + 10) {
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth   = 2;
+        ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+        ctx.fillStyle   = '#22c55e';
+        ctx.fillRect(sx - 5, 0, 10, 8);
+      }
 
       // End marker — red (show while dragging 'new' or when slice exists)
       if (pad.hasSlice || dragTarget === 'new') {
-        const ex = Math.floor(pad.endNorm * W);
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth   = 2;
-        ctx.beginPath(); ctx.moveTo(ex, 0); ctx.lineTo(ex, H); ctx.stroke();
-        ctx.fillStyle   = '#ef4444';
-        ctx.fillRect(ex - 5, 0, 10, 8);
+        const ex = mapX(pad.endNorm);
+        if (ex >= -10 && ex <= W + 10) {
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth   = 2;
+          ctx.beginPath(); ctx.moveTo(ex, 0); ctx.lineTo(ex, H); ctx.stroke();
+          ctx.fillStyle   = '#ef4444';
+          ctx.fillRect(ex - 5, 0, 10, 8);
+        }
       }
     }
 
     // Playhead
     if (phNorm > 0 && phNorm < 1) {
-      const px = Math.floor(phNorm * W);
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth   = 1;
-      ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+      const px = mapX(phNorm);
+      if (px >= 0 && px <= W) {
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+      }
     }
   }
 
+  // Sets the total-time readout — called once when audio loads (unaffected by zoom).
   function updateRuler(duration) {
-    const ticks = document.querySelectorAll('.wave-ruler .ruler-tick');
-    if (ticks.length >= 5) {
-      ticks[0].textContent = '0:00';
-      ticks[1].textContent = fmtTime(duration * 0.25);
-      ticks[2].textContent = fmtTime(duration * 0.5);
-      ticks[3].textContent = fmtTime(duration * 0.75);
-      ticks[4].textContent = fmtTime(duration);
-    }
     const el = document.getElementById('wave-time-tot');
     if (el) el.textContent = fmtTime(duration);
   }
 
+  // Sets the 5 ruler tick labels to the CURRENT zoomed/panned view's time range.
+  function updateRulerForView() {
+    if (!masterBuffer) return;
+    const dur   = masterBuffer.duration;
+    const t0    = waveViewStart * dur;
+    const t1    = (waveViewStart + waveViewSpan) * dur;
+    const span  = t1 - t0;
+    const ticks = document.querySelectorAll('.wave-ruler .ruler-tick');
+    if (ticks.length >= 5) {
+      ticks[0].textContent = fmtTime(t0);
+      ticks[1].textContent = fmtTime(t0 + span * 0.25);
+      ticks[2].textContent = fmtTime(t0 + span * 0.5);
+      ticks[3].textContent = fmtTime(t0 + span * 0.75);
+      ticks[4].textContent = fmtTime(t1);
+    }
+  }
+
   // ── PAD MINI-WAVEFORM ──────────────────────────────────────────────────────
-  function renderPadMiniWave(padIdx, playheadNorm = null) {
+  // playheadFrac (0..1) is the position WITHIN THE SLICE (elapsed/dur, as tickPads
+  // computes it); it gets converted to an absolute source position, then mapped
+  // through the pad's current view (which may be zoomed/panned away from 1:1).
+  function renderPadMiniWave(padIdx, playheadFrac = null) {
     const pad = pads[padIdx];
     const el  = document.getElementById(`pad-${padIdx}`);
     if (!el || !pad.hasSlice) return;
@@ -277,55 +437,246 @@
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, W, H);
 
-    let data, startSample, endSample;
-    if (pad.type === 'buffer' && pad.buffer) {
-      data        = pad.buffer.getChannelData(0);
-      const N     = data.length;
-      startSample = Math.floor(pad.startNorm * N);
-      endSample   = Math.floor(pad.endNorm   * N);
-    } else if (masterBuffer) {
-      data        = masterBuffer.getChannelData(0);
-      const N     = data.length;
-      startSample = Math.floor(pad.startNorm * N);
-      endSample   = Math.floor(pad.endNorm   * N);
-    } else {
-      return;
+    const srcBuf = padSourceBuffer(pad);
+    if (!srcBuf) return;
+    const data = srcBuf.getChannelData(0);
+    const N = data.length;
+
+    // At zoomIdx 0 the view is always exactly the slice — keep it in sync
+    // automatically so edits (edge-drag, autochop, etc.) never go stale.
+    if (pad.zoomIdx === 0) {
+      pad.viewStart = pad.startNorm;
+      pad.viewSpan  = Math.max(0.0001, pad.endNorm - pad.startNorm);
     }
 
-    const sliceLen = endSample - startSample;
-    if (sliceLen <= 0) return;
+    const viewStart  = pad.viewStart;
+    const viewSpan   = pad.viewSpan || 1;
+    const startSample = Math.floor(viewStart * N);
+    const endSample   = Math.floor(Math.min(1, viewStart + viewSpan) * N);
+    const viewLen = endSample - startSample;
+    if (viewLen <= 0) return;
 
     const color = PAD_COLORS[padIdx];
     const mid   = H / 2;
+    const mapX  = (norm) => ((norm - viewStart) / viewSpan) * W;
 
     for (let x = 0; x < W; x++) {
-      const s = Math.floor(x / W * sliceLen) + startSample;
-      const e = Math.min(Math.floor((x + 1) / W * sliceLen) + startSample, endSample);
+      const s = Math.floor(x / W * viewLen) + startSample;
+      const e = Math.min(Math.floor((x + 1) / W * viewLen) + startSample, endSample);
       let mn = 0, mx = 0;
       for (let i = s; i < e; i++) {
         if (data[i] < mn) mn = data[i];
         if (data[i] > mx) mx = data[i];
       }
+      // Dim the parts of the view outside the actual slice bounds (context)
+      const xNorm = viewStart + (x / W) * viewSpan;
+      const inSlice = xNorm >= pad.startNorm && xNorm <= pad.endNorm;
       const yT = mid - mx * mid * 0.85;
       const yB = mid - mn * mid * 0.85;
-      ctx.fillStyle = color;
+      ctx.fillStyle = inSlice ? color : hexToRgba(color, 0.3);
       ctx.fillRect(x, yT, 1, Math.max(1, yB - yT));
     }
 
-    // Playhead
-    if (playheadNorm !== null && playheadNorm >= 0 && playheadNorm <= 1) {
-      const px = Math.floor(playheadNorm * W);
-      ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-      ctx.lineWidth   = 1.5;
-      ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+    // Playhead — convert slice-relative fraction to an absolute position, then view-map it
+    if (playheadFrac !== null && playheadFrac >= 0 && playheadFrac <= 1) {
+      const absNorm = pad.startNorm + playheadFrac * (pad.endNorm - pad.startNorm);
+      const px = mapX(absNorm);
+      if (px >= 0 && px <= W) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+      }
     }
 
-    // Edge drag handles (shown in sample mode for any loaded pad)
-    if (sampleModeOn && pad.hasSlice) {
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(0, 0, 4, H);
-      ctx.fillRect(W - 4, 0, 4, H);
+    // Edge markers (sample mode only — matches main waveform's green/red style)
+    if (sampleModeOn) {
+      const sx = mapX(pad.startNorm);
+      if (sx >= -6 && sx <= W + 6) {
+        ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.stroke();
+      }
+      const ex = mapX(pad.endNorm);
+      if (ex >= -6 && ex <= W + 6) {
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(ex, 0); ctx.lineTo(ex, H); ctx.stroke();
+      }
     }
+  }
+
+  // Resets a pad's mini-wave zoom/pan back to 1X (view == its current slice bounds).
+  function resetPadZoom(padIdx) {
+    const pad = pads[padIdx];
+    pad.zoomIdx   = 0;
+    pad.viewStart = pad.startNorm;
+    pad.viewSpan  = Math.max(0.0001, pad.endNorm - pad.startNorm);
+    const btn = document.getElementById(`pad-${padIdx}`)?.querySelector('.pad-zoom-btn');
+    if (btn) btn.textContent = '1X';
+  }
+
+  function cyclePadZoom(padIdx) {
+    const pad = pads[padIdx];
+    pad.zoomIdx = (pad.zoomIdx + 1) % ZOOM_LEVELS.length;
+    const level = ZOOM_LEVELS[pad.zoomIdx];
+    const sliceSpan = Math.max(0.0001, pad.endNorm - pad.startNorm);
+    if (level === 1) {
+      pad.viewStart = pad.startNorm;
+      pad.viewSpan  = sliceSpan;
+    } else {
+      const newSpan = sliceSpan / level;
+      const curCenter = pad.viewStart + pad.viewSpan / 2;
+      pad.viewStart = Math.max(0, Math.min(curCenter - newSpan / 2, 1 - newSpan));
+      pad.viewSpan  = newSpan;
+    }
+    const btn = document.getElementById(`pad-${padIdx}`)?.querySelector('.pad-zoom-btn');
+    if (btn) btn.textContent = `${level}X`;
+    renderPadMiniWave(padIdx);
+  }
+
+  // ── ADSR ENVELOPE POPUP ────────────────────────────────────────────────────
+  function envDefault() {
+    return { attack: 0.08, decay: 0.08, sustain: 1, release: 0.08 };
+  }
+
+  function isDefaultEnv(env) {
+    const d = envDefault();
+    return Math.abs(env.attack - d.attack) < 0.001
+      && Math.abs(env.decay - d.decay) < 0.001
+      && Math.abs(env.sustain - d.sustain) < 0.001
+      && Math.abs(env.release - d.release) < 0.001;
+  }
+
+  function updateEnvBtnState(padIdx) {
+    const btn = document.getElementById(`pad-${padIdx}`)?.querySelector('.pad-env-btn');
+    if (btn) btn.classList.toggle('active', !isDefaultEnv(pads[padIdx].adsr));
+  }
+
+  function updateEnvLabels() {
+    document.getElementById('env-attack-val').textContent  = `${document.getElementById('env-attack').value}ms`;
+    document.getElementById('env-decay-val').textContent   = `${document.getElementById('env-decay').value}ms`;
+    document.getElementById('env-sustain-val').textContent = `${document.getElementById('env-sustain').value}%`;
+    document.getElementById('env-release-val').textContent = `${document.getElementById('env-release').value}ms`;
+  }
+
+  function readEnvDraftFromSliders() {
+    envDraft = {
+      attack:  +document.getElementById('env-attack').value  / 1000,
+      decay:   +document.getElementById('env-decay').value   / 1000,
+      sustain: +document.getElementById('env-sustain').value / 100,
+      release: +document.getElementById('env-release').value / 1000,
+    };
+  }
+
+  function setEnvSlidersFromDraft() {
+    document.getElementById('env-attack').value  = Math.round(envDraft.attack * 1000);
+    document.getElementById('env-decay').value   = Math.round(envDraft.decay * 1000);
+    document.getElementById('env-sustain').value = Math.round(envDraft.sustain * 100);
+    document.getElementById('env-release').value = Math.round(envDraft.release * 1000);
+    updateEnvLabels();
+    drawEnvCanvas();
+  }
+
+  // Draws the ADSR SHAPE only (not audio) — a fixed-width visual "hold" segment
+  // stands in for sustain's indefinite hold, scaled against A/D/R in the same units.
+  function drawEnvCanvas() {
+    const canvas = document.getElementById('env-canvas');
+    if (!canvas) return;
+    const W = canvas.width, H = canvas.height;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    const padTop = 10, padBottom = 10;
+    const top = padTop, bottom = H - padBottom;
+
+    const aMs = envDraft.attack * 1000;
+    const dMs = envDraft.decay * 1000;
+    const rMs = envDraft.release * 1000;
+    const holdMs = 300; // fixed visual sustain-hold width
+    const totalMs = Math.max(1, aMs + dMs + holdMs + rMs);
+
+    const x0 = 0;
+    const x1 = (aMs / totalMs) * W;
+    const x2 = x1 + (dMs / totalMs) * W;
+    const x3 = x2 + (holdMs / totalMs) * W;
+    const x4 = x3 + (rMs / totalMs) * W;
+    const sustainY = bottom - envDraft.sustain * (bottom - top);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    for (let gy = 0; gy <= 4; gy++) {
+      const y = top + (gy / 4) * (bottom - top);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Fill under curve
+    ctx.beginPath();
+    ctx.moveTo(x0, bottom);
+    ctx.lineTo(x1, top);
+    ctx.lineTo(x2, sustainY);
+    ctx.lineTo(x3, sustainY);
+    ctx.lineTo(x4, bottom);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,140,66,0.25)';
+    ctx.fill();
+
+    // Stroke line
+    ctx.beginPath();
+    ctx.moveTo(x0, bottom);
+    ctx.lineTo(x1, top);
+    ctx.lineTo(x2, sustainY);
+    ctx.lineTo(x3, sustainY);
+    ctx.lineTo(x4, bottom);
+    ctx.strokeStyle = '#ff8c42';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Breakpoint markers
+    ctx.fillStyle = '#000';
+    [[x1, top], [x2, sustainY], [x3, sustainY]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  function openEnvModal(padIdx) {
+    envActivePad = padIdx;
+    envDraft = { ...pads[padIdx].adsr };
+    const titleEl = document.getElementById('env-modal-title');
+    if (titleEl) titleEl.textContent = `ENVELOPE — PAD ${padIdx + 1}`;
+    setEnvSlidersFromDraft();
+    const overlay = document.getElementById('env-modal-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+
+  function closeEnvModal() {
+    const overlay = document.getElementById('env-modal-overlay');
+    if (overlay) overlay.style.display = 'none';
+    envActivePad = -1;
+  }
+
+  function saveEnvelope() {
+    if (envActivePad < 0) return;
+    readEnvDraftFromSliders();
+    if (envScope === 'all') {
+      pads.forEach((p, i) => { p.adsr = { ...envDraft }; updateEnvBtnState(i); });
+    } else {
+      pads[envActivePad].adsr = { ...envDraft };
+      updateEnvBtnState(envActivePad);
+    }
+    closeEnvModal();
+  }
+
+  function resetEnvelope() {
+    if (envActivePad < 0) return;
+    const def = envDefault();
+    if (envScope === 'all') {
+      pads.forEach((p, i) => { p.adsr = { ...def }; updateEnvBtnState(i); });
+    } else {
+      pads[envActivePad].adsr = { ...def };
+      updateEnvBtnState(envActivePad);
+    }
+    envDraft = { ...def };
+    setEnvSlidersFromDraft();
+    closeEnvModal();
   }
 
   // ── PAD GRID BUILD ─────────────────────────────────────────────────────────
@@ -353,6 +704,8 @@
           <div class="pad-toggle-group">
             <button class="pad-oneshot-btn" title="One-shot: plays full sample on press (hold pad key + 1 to toggle)">1S</button>
             <button class="pad-lock-btn" title="Lock: skip this pad on Auto Chop (hold pad key + 2 to toggle)">LK</button>
+            <button class="pad-env-btn" title="Adjust the ADSR envelope">ENV</button>
+            <button class="pad-zoom-btn" title="Cycle zoom level — drag the waveform in Sample Mode to pan">1X</button>
           </div>
           <input class="pad-key-input" type="text" value="${pad.keyBinding.toUpperCase()}"
                  maxlength="1" title="Click to remap keyboard shortcut" autocomplete="off">
@@ -360,10 +713,20 @@
 
       // Pad click (play / select / assign)
       el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
         if (e.target.classList.contains('pad-key-input')) return;
         if (e.target.classList.contains('pad-oneshot-btn')) return;
         if (e.target.classList.contains('pad-lock-btn')) return;
+        if (e.target.classList.contains('pad-zoom-btn')) return;
+        if (e.target.classList.contains('pad-env-btn')) return;
         handlePadClick(i);
+      });
+
+      // Right-click: copy/paste sample content between pads
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPadContextMenu(e, i);
       });
 
       // Key remapping input
@@ -401,14 +764,37 @@
       });
       lockBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
-      // Mini-wave edge drag (sample mode only; works for slice pads and recorded buffer pads)
+      // Zoom toggle
+      const zoomBtn = el.querySelector('.pad-zoom-btn');
+      zoomBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cyclePadZoom(i);
+      });
+      zoomBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+
+      // Envelope popup
+      const envBtn = el.querySelector('.pad-env-btn');
+      envBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEnvModal(i);
+      });
+      envBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+
+      // Mini-wave edge drag / pan (sample mode only; works for slice pads and recorded buffer pads)
       const miniCanvas = el.querySelector('.pad-mini-wave');
+      // Maps pad.startNorm/endNorm into the pad's CURRENT view (accounts for zoom/pan)
+      function miniEdgePx(norm, width) {
+        return ((norm - pad.viewStart) / (pad.viewSpan || 1)) * width;
+      }
       miniCanvas.addEventListener('mousemove', (ev) => {
         if (!sampleModeOn || !pad.hasSlice) { miniCanvas.style.cursor = ''; return; }
         const rect   = miniCanvas.getBoundingClientRect();
         const cx     = ev.clientX - rect.left;
         const thresh = Math.min(10, rect.width * 0.2);
-        miniCanvas.style.cursor = (cx <= thresh || cx >= rect.width - thresh) ? 'ew-resize' : '';
+        const startPx = miniEdgePx(pad.startNorm, rect.width);
+        const endPx   = miniEdgePx(pad.endNorm, rect.width);
+        const nearEdge = Math.abs(cx - startPx) < thresh || Math.abs(cx - endPx) < thresh;
+        miniCanvas.style.cursor = nearEdge ? 'ew-resize' : (pad.zoomIdx > 0 ? 'grab' : '');
       });
       miniCanvas.addEventListener('mouseleave', () => { miniCanvas.style.cursor = ''; });
       miniCanvas.addEventListener('mousedown', (ev) => {
@@ -416,16 +802,37 @@
         const rect   = miniCanvas.getBoundingClientRect();
         const cx     = ev.clientX - rect.left;
         const thresh = Math.min(10, rect.width * 0.2);
-        if (cx > thresh && cx < rect.width - thresh) return; // middle → bubble to pad click
+        const startPx = miniEdgePx(pad.startNorm, rect.width);
+        const endPx   = miniEdgePx(pad.endNorm, rect.width);
+        const nearStart = Math.abs(cx - startPx) < thresh;
+        const nearEnd   = Math.abs(cx - endPx) < thresh;
+
+        if (nearStart) {
+          miniDragTarget = 'start';
+        } else if (nearEnd) {
+          miniDragTarget = 'end';
+        } else if (pad.zoomIdx > 0) {
+          // Possible pan — don't stop propagation, so a plain click (no real
+          // movement) still bubbles up and selects the pad as normal.
+          miniDragPad = i;
+          miniDragTarget = 'pan-pending';
+          miniDragOriginX = ev.clientX;
+          miniDragViewStartOrigin = pad.viewStart;
+          miniDragViewSpan = pad.viewSpan || 1;
+          miniDragWidth = rect.width;
+          return;
+        } else {
+          return; // middle, not zoomed → bubble to pad click (select)
+        }
+
         ev.stopPropagation();
         ev.preventDefault();
-        miniDragPad      = i;
-        miniDragTarget   = cx <= thresh ? 'start' : 'end';
-        miniDragOriginX  = ev.clientX;
+        miniDragPad       = i;
+        miniDragOriginX   = ev.clientX;
         miniDragOrigStart = pad.startNorm;
         miniDragOrigEnd   = pad.endNorm;
-        miniDragSpan     = pad.endNorm - pad.startNorm;
-        miniDragWidth    = rect.width;
+        miniDragViewSpan  = pad.viewSpan || 1;
+        miniDragWidth     = rect.width;
       });
 
       grid.appendChild(el);
@@ -455,7 +862,10 @@
     if (pendingPadBuffer !== null) {
       assignToPad(padIdx);
     } else if (sampleModeOn) {
+      // Select for editing AND preview it — lets you hear a pad while
+      // dragging its start/end markers to dial in the right length.
       selectPad(padIdx);
+      triggerPad(padIdx);
     } else {
       triggerPad(padIdx);
     }
@@ -475,6 +885,65 @@
         : `Pad ${padIdx + 1} selected — drag on the waveform to set a sample region`;
     }
     renderWave(playheadNorm);
+  }
+
+  // ── PAD CONTEXT MENU (copy/paste sample content between pads) ─────────────
+  function openPadContextMenu(e, padIdx) {
+    ctxMenuTargetPad = padIdx;
+    const menu = document.getElementById('pad-context-menu');
+    const pasteBtn = document.getElementById('pad-ctx-paste');
+    if (!menu || !pasteBtn) return;
+    pasteBtn.disabled = !copiedPadData;
+
+    menu.style.display = 'flex';
+    const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
+    const x = Math.min(e.clientX, window.innerWidth - menuW - 4);
+    const y = Math.min(e.clientY, window.innerHeight - menuH - 4);
+    menu.style.left = `${Math.max(4, x)}px`;
+    menu.style.top  = `${Math.max(4, y)}px`;
+  }
+
+  function closePadContextMenu() {
+    const menu = document.getElementById('pad-context-menu');
+    if (menu) menu.style.display = 'none';
+    ctxMenuTargetPad = -1;
+  }
+
+  // Copies only the sample CONTENT (what plays and from where) — playback
+  // settings the user has configured for that physical pad slot (lock,
+  // one-shot, envelope, key) are left on the destination untouched.
+  function padToClipboardEntry(pad) {
+    return pad.hasSlice
+      ? { hasSlice: true, type: pad.type, buffer: pad.buffer, startNorm: pad.startNorm, endNorm: pad.endNorm, trackIdx: pad.trackIdx }
+      : { hasSlice: false };
+  }
+
+  function copyTargetPad() {
+    if (ctxMenuTargetPad < 0) return;
+    copiedPadData = padToClipboardEntry(pads[ctxMenuTargetPad]);
+    closePadContextMenu();
+  }
+
+  function pasteIntoTargetPad() {
+    if (ctxMenuTargetPad < 0 || !copiedPadData) return;
+    const pad = pads[ctxMenuTargetPad];
+    if (copiedPadData.hasSlice) {
+      pad.type      = copiedPadData.type;
+      pad.buffer    = copiedPadData.buffer;
+      pad.startNorm = copiedPadData.startNorm;
+      pad.endNorm   = copiedPadData.endNorm;
+      pad.trackIdx  = copiedPadData.trackIdx;
+      pad.hasSlice  = true;
+    } else {
+      pad.hasSlice  = false;
+      pad.startNorm = 0;
+      pad.endNorm   = 0;
+    }
+    resetPadZoom(ctxMenuTargetPad);
+    updatePadUI(ctxMenuTargetPad);
+    updateAutoTrimBtnState();
+    renderWave(playheadNorm);
+    closePadContextMenu();
   }
 
   // Schedules an attack→decay→sustain→release ramp on a GainNode's gain param,
@@ -513,19 +982,10 @@
     if (!pad.hasSlice) return;
 
     const ctx = getAudioCtx();
-    let buf, offset, dur;
-
-    if (pad.type === 'buffer' && pad.buffer) {
-      buf    = pad.buffer;
-      offset = pad.startNorm * buf.duration;
-      dur    = (pad.endNorm - pad.startNorm) * buf.duration;
-    } else if (masterBuffer) {
-      buf    = masterBuffer;
-      offset = pad.startNorm * masterBuffer.duration;
-      dur    = (pad.endNorm - pad.startNorm) * masterBuffer.duration;
-    } else {
-      return;
-    }
+    const buf = padSourceBuffer(pad);
+    if (!buf) return;
+    const offset = pad.startNorm * buf.duration;
+    const dur    = (pad.endNorm - pad.startNorm) * buf.duration;
 
     if (dur < 0.001) return;
 
@@ -551,8 +1011,8 @@
     gainNode.connect(masterGain);
 
     applyEnvelope(gainNode.gain, pad.adsr, now, dur);
-
     src.start(0, offset, dur);
+
     activeSources[padIdx] = { source: src, gainNode, startedAt: now };
 
     const el = document.getElementById(`pad-${padIdx}`);
@@ -598,8 +1058,10 @@
     pad.endNorm   = 1;
     pad.hasSlice  = true;
     pendingPadBuffer = null;
+    resetPadZoom(padIdx);
     hideAssignBar();
     updatePadUI(padIdx);
+    updateAutoTrimBtnState();
   }
 
   function showAssignBar() {
@@ -622,17 +1084,29 @@
     window.addEventListener('mouseup',   onWaveUp);
   }
 
+  // Returns an ABSOLUTE (full-buffer) normalized position for a clientX,
+  // accounting for the current zoom/pan view.
   function waveNorm(clientX) {
     const canvas = document.getElementById('bampler-wave-canvas');
     if (!canvas) return 0;
     const rect = canvas.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return waveViewStart + frac * waveViewSpan;
   }
 
   function onWaveDown(e) {
     if (!masterBuffer) return;
 
     if (!sampleModeOn) {
+      if (waveZoomIdx > 0) {
+        // Possible pan — resolved to a seek-on-click in onWaveUp if it turns
+        // out the mouse never moved past the drag threshold.
+        waveDragPending = true;
+        waveDragOriginX = e.clientX;
+        waveDragOriginViewStart = waveViewStart;
+        waveDragMoved = false;
+        return;
+      }
       // Seek on click
       seekWave(waveNorm(e.clientX));
       return;
@@ -641,15 +1115,20 @@
     if (selectedPad < 0) return;
 
     const norm  = waveNorm(e.clientX);
-    const xPx   = e.clientX - document.getElementById('bampler-wave-canvas').getBoundingClientRect().left;
-    const W     = document.getElementById('bampler-wave-canvas').getBoundingClientRect().width;
+    const rect  = document.getElementById('bampler-wave-canvas').getBoundingClientRect();
+    const xPx   = e.clientX - rect.left;
+    const W     = rect.width;
     const pad   = pads[selectedPad];
-    const startX = pad.startNorm * W;
-    const endX   = pad.endNorm   * W;
+    const startX = waveMapNormToPx(pad.startNorm, W);
+    const endX   = waveMapNormToPx(pad.endNorm, W);
 
-    if (pad.hasSlice && Math.abs(xPx - startX) < 10) {
+    // Existing start/end handles are only grabbable for a 'slice' pad whose
+    // sample actually belongs to the track on screen — otherwise the drawn
+    // markers (and thus these coordinates) don't correspond to anything real.
+    const sameTrack = pad.type === 'slice' && pad.hasSlice && pad.trackIdx === activeTrackIdx;
+    if (sameTrack && Math.abs(xPx - startX) < 10) {
       dragTarget = 'start';
-    } else if (pad.hasSlice && Math.abs(xPx - endX) < 10) {
+    } else if (sameTrack && Math.abs(xPx - endX) < 10) {
       dragTarget = 'end';
     } else {
       dragTarget  = 'new';
@@ -664,6 +1143,19 @@
   }
 
   function onWaveMove(e) {
+    if (waveDragPending) {
+      const dx = e.clientX - waveDragOriginX;
+      if (Math.abs(dx) > 3) {
+        waveDragMoved = true;
+        const canvas = document.getElementById('bampler-wave-canvas');
+        const W = canvas.getBoundingClientRect().width;
+        const normDelta = (dx / W) * waveViewSpan;
+        waveViewStart = Math.max(0, Math.min(waveDragOriginViewStart - normDelta, 1 - waveViewSpan));
+        refreshWaveView();
+      }
+      return;
+    }
+
     if (!dragTarget || selectedPad < 0) return;
     const norm = waveNorm(e.clientX);
     const pad  = pads[selectedPad];
@@ -686,14 +1178,26 @@
     renderWave(playheadNorm);
   }
 
-  function onWaveUp() {
+  function onWaveUp(e) {
+    if (waveDragPending) {
+      if (!waveDragMoved) seekWave(waveNorm(e.clientX));
+      waveDragPending = false;
+      waveDragMoved = false;
+      return;
+    }
+
     if (!dragTarget) return;
 
     if (dragTarget === 'new') {
       const pad = pads[selectedPad];
       if (pad.endNorm - pad.startNorm > 0.001) {
-        pad.hasSlice = true;
+        pad.type      = 'slice';
+        pad.buffer    = null;
+        pad.trackIdx  = activeTrackIdx;
+        pad.hasSlice  = true;
+        resetPadZoom(selectedPad);
         updatePadUI(selectedPad);
+        updateAutoTrimBtnState();
         const hint = document.getElementById('wave-hint');
         if (hint) hint.textContent = `Pad ${selectedPad + 1} selected — drag the markers to adjust sample region`;
       }
@@ -803,9 +1307,12 @@
           final.getChannelData(0).set(buf.getChannelData(0).subarray(0, maxSamples));
         }
         hideProcessing();
-        onAudioReady(final, file.name.replace(/\.[^.]+$/, ''));
+        const targetTrack = pendingTrackIdx >= 0 ? pendingTrackIdx : 0;
+        pendingTrackIdx = -1;
+        commitBufferToTrack(targetTrack, final, file.name.replace(/\.[^.]+$/, ''));
       }).catch(err => {
         hideProcessing();
+        pendingTrackIdx = -1;
         console.error('Decode error', err);
       });
     };
@@ -864,7 +1371,10 @@
     setTimeout(() => {
       const buf = buildPcmBuffer(chunks, sampleRate, MAX_REC_SECS);
       hideProcessing();
-      onAudioReady(buf, 'recording');
+      // Live recording only ever happens before any track is loaded — the
+      // record button lives on the upload panel, hidden once a track exists —
+      // so this always lands in slot 0.
+      commitBufferToTrack(0, buf, 'recording');
     }, 0);
   }
 
@@ -992,8 +1502,18 @@
     if (ind) ind.style.display = 'none';
   }
 
-  // ── ON AUDIO READY ─────────────────────────────────────────────────────────
-  function onAudioReady(buf, name) {
+  // ── MULTI-TRACK SLOTS ──────────────────────────────────────────────────────
+  // Commits a decoded buffer into a track slot. The very first track loaded
+  // in a session resets the pad grid (fresh start); a second or third track
+  // is added alongside whatever pads already exist, so samples chopped from
+  // earlier tracks aren't lost — only pads still pointing at THIS slot's old
+  // content ever needed resetting, and slice-type pads are always tied to
+  // whichever track they were actually chopped from via pad.trackIdx.
+  function commitBufferToTrack(trackIdx, buf, name) {
+    const isFirstTrack = !tracks.some(Boolean);
+
+    tracks[trackIdx] = { buffer: buf, name };
+    activeTrackIdx = trackIdx;
     masterBuffer = buf;
 
     // Stop any in-progress playback
@@ -1002,10 +1522,18 @@
     wavePlayback.offsetSec = 0;
     playheadNorm = 0;
 
-    // Reset slice-type pads; keep buffer-type pads
-    pads.forEach(p => {
-      if (p.type === 'slice') { p.hasSlice = false; p.startNorm = 0; p.endNorm = 0; }
-    });
+    // Reset main waveform zoom/pan for the newly displayed track
+    waveZoomIdx = 0; waveViewStart = 0; waveViewSpan = 1;
+    const zoomBtnMain = document.getElementById('wave-zoom-btn');
+    if (zoomBtnMain) zoomBtnMain.textContent = '1X';
+
+    // Fresh session only: reset slice-type pads (buffer-type pads, from
+    // Record-to-Pad, are independent of tracks and are always left alone)
+    if (isFirstTrack) {
+      pads.forEach(p => {
+        if (p.type === 'slice') { p.hasSlice = false; p.startNorm = 0; p.endNorm = 0; }
+      });
+    }
 
     // Show wave panel + pad UI
     document.getElementById('upload-panel').style.display       = 'none';
@@ -1020,11 +1548,14 @@
     }
 
     pads.forEach((_, i) => updatePadUI(i));
+    updateAutoTrimBtnState();
 
     // Compute waveform after layout paint
     setTimeout(() => {
       resizeWaveCanvas();
       updateRuler(masterBuffer.duration);
+      updateRulerForView();
+      renderWaveScrollbar();
       // Resize all pad mini-wave canvases now that they're visible
       pads.forEach((_, i) => { if (pads[i].hasSlice) renderPadMiniWave(i); });
     }, 50);
@@ -1033,6 +1564,70 @@
     document.getElementById('wave-play-btn').textContent = '▶';
     document.getElementById('wave-time-cur').textContent = '0:00';
     setStatus('LOADED');
+
+    updateSlotButtons();
+    updateAddTrackVisibility();
+  }
+
+  // Switches which track's waveform is on screen — does not touch any pad's
+  // content, which always keeps playing from whichever track it was actually
+  // chopped from (pad.trackIdx), regardless of what's currently displayed.
+  function switchToTrack(idx) {
+    if (idx === activeTrackIdx || !tracks[idx]) return;
+    waveStopPlay();
+
+    activeTrackIdx = idx;
+    masterBuffer = tracks[idx].buffer;
+    document.getElementById('session-name').textContent = tracks[idx].name;
+    document.getElementById('wave-time-cur').textContent = '0:00';
+
+    waveZoomIdx = 0; waveViewStart = 0; waveViewSpan = 1;
+    const zoomBtnMain = document.getElementById('wave-zoom-btn');
+    if (zoomBtnMain) zoomBtnMain.textContent = '1X';
+
+    // A pad selected from a different track no longer has meaningful markers
+    // on this waveform — deselect so nothing stale is shown.
+    if (selectedPad >= 0 && pads[selectedPad].trackIdx !== idx) {
+      document.getElementById(`pad-${selectedPad}`)?.classList.remove('pad-selected');
+      selectedPad = -1;
+    }
+
+    setTimeout(() => {
+      resizeWaveCanvas();
+      updateRuler(masterBuffer.duration);
+      updateRulerForView();
+      renderWaveScrollbar();
+    }, 50);
+
+    updateSlotButtons();
+    renderWave(playheadNorm);
+  }
+
+  // [1]/[2]/[3] only ever appear once a second track exists — with a single
+  // track there's nothing to switch between, so no buttons render at all.
+  function updateSlotButtons() {
+    const wrap = document.getElementById('slot-buttons-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    const filledCount = tracks.filter(Boolean).length;
+    if (filledCount <= 1) return;
+
+    tracks.forEach((t, idx) => {
+      if (!t) return;
+      const btn = document.createElement('button');
+      btn.className = 'shell-slot-btn' + (idx === activeTrackIdx ? ' active' : '');
+      btn.textContent = String(idx + 1);
+      btn.title = t.name;
+      btn.addEventListener('click', () => switchToTrack(idx));
+      wrap.appendChild(btn);
+    });
+  }
+
+  function updateAddTrackVisibility() {
+    const btn = document.getElementById('btn-add-track');
+    if (!btn) return;
+    const filledCount = tracks.filter(Boolean).length;
+    btn.style.display = (filledCount >= 1 && filledCount < MAX_TRACKS) ? '' : 'none';
   }
 
   // ── SAMPLE MODE ────────────────────────────────────────────────────────────
@@ -1079,14 +1674,61 @@
 
       pad.type      = 'slice';
       pad.buffer    = null;
+      pad.trackIdx  = activeTrackIdx;
       pad.startNorm = startSec / dur;
       pad.endNorm   = Math.min(1, (startSec + len) / dur);
       pad.hasSlice  = true;
+      resetPadZoom(i);
 
       updatePadUI(i);
     });
 
     renderWave(playheadNorm);
+    updateAutoTrimBtnState();
+  }
+
+  // ── AUTO TRIM ──────────────────────────────────────────────────────────────
+  // Enabled once at least one pad has a sample loaded.
+  function updateAutoTrimBtnState() {
+    const btn = document.getElementById('btn-auto-trim');
+    if (!btn) return;
+    btn.disabled = !pads.some(p => p.hasSlice);
+  }
+
+  // Shortens every unlocked, loaded pad's sample to a random new length that's
+  // always shorter than its CURRENT length, staying fully within its current
+  // [startNorm, endNorm] bounds (never reaches back into audio outside the
+  // pad's existing chop).
+  function autoTrim() {
+    let trimmedAny = false;
+
+    pads.forEach((pad, i) => {
+      if (!pad.hasSlice || pad.locked) return;
+
+      const srcBuf = padSourceBuffer(pad);
+      const refDuration = srcBuf ? srcBuf.duration : 0;
+      if (!refDuration) return;
+
+      const curSpan   = pad.endNorm - pad.startNorm;
+      const curLenSec = curSpan * refDuration;
+
+      const minLenSec = Math.max(0.05, curLenSec * 0.1); // at least 50ms, or 10% of current
+      const maxLenSec = curLenSec * 0.9;                  // always at least 10% shorter
+      if (minLenSec >= maxLenSec) return; // already too short to usefully trim further
+
+      const newLenSec = minLenSec + Math.random() * (maxLenSec - minLenSec);
+      const newSpan   = newLenSec / refDuration;
+      const maxStartOffset = curSpan - newSpan; // keeps the new trim fully inside the current bounds
+      const newStart  = pad.startNorm + Math.random() * maxStartOffset;
+
+      pad.startNorm = newStart;
+      pad.endNorm   = newStart + newSpan;
+      resetPadZoom(i);
+      updatePadUI(i);
+      trimmedAny = true;
+    });
+
+    if (trimmedAny) renderWave(playheadNorm);
   }
 
   // ── EXPORT PADS (WAV files bundled in a zip) ───────────────────────────────
@@ -1212,16 +1854,10 @@
     pads.forEach((pad, i) => {
       if (!pad.hasSlice) return;
 
-      let full, sampleRate;
-      if (pad.type === 'buffer' && pad.buffer) {
-        full = pad.buffer.getChannelData(0);
-        sampleRate = pad.buffer.sampleRate;
-      } else if (masterBuffer) {
-        full = masterBuffer.getChannelData(0);
-        sampleRate = masterBuffer.sampleRate;
-      } else {
-        return;
-      }
+      const srcBuf = padSourceBuffer(pad);
+      if (!srcBuf) return;
+      const full = srcBuf.getChannelData(0);
+      const sampleRate = srcBuf.sampleRate;
 
       const N = full.length;
       const s = Math.floor(pad.startNorm * N);
@@ -1258,6 +1894,9 @@
     stopPadRecording(true);
     cancelAnimationFrame(rafHandle);
 
+    tracks[0] = tracks[1] = tracks[2] = null;
+    activeTrackIdx = 0;
+    pendingTrackIdx = -1;
     masterBuffer   = null;
     waveformPeaks  = null;
     playheadNorm   = 0;
@@ -1266,11 +1905,25 @@
     dragTarget     = null;
     pendingPadBuffer = null;
     heldPadKeys.clear();
+    copiedPadData = null;
+    closePadContextMenu();
 
     Object.values(activeSources).forEach(s => { try { s.source.stop(); } catch (_) {} });
     Object.keys(activeSources).forEach(k => delete activeSources[k]);
     if (padRafHandle) { cancelAnimationFrame(padRafHandle); padRafHandle = null; }
     miniDragPad = -1; miniDragTarget = null;
+
+    // Reset main waveform zoom/pan
+    waveZoomIdx = 0; waveViewStart = 0; waveViewSpan = 1;
+    waveDragPending = false; waveDragMoved = false; scrollbarDragging = false;
+    const zoomBtnMain = document.getElementById('wave-zoom-btn');
+    if (zoomBtnMain) zoomBtnMain.textContent = '1X';
+    renderWaveScrollbar();
+
+    // Reset ADSR envelope popup state
+    closeEnvModal();
+    envScope = 'this';
+    document.querySelectorAll('.env-scope-btn').forEach(b => b.classList.toggle('active', b.dataset.scope === 'this'));
 
     pads.forEach((pad, i) => {
       pad.type      = 'slice';
@@ -1278,13 +1931,20 @@
       pad.endNorm   = 0;
       pad.hasSlice  = false;
       pad.buffer    = null;
+      pad.trackIdx  = 0;
       pad.oneShot   = false;
       pad.locked    = false;
       pad.adsr      = { attack: 0.08, decay: 0.08, sustain: 1, release: 0.08 };
+      pad.zoomIdx   = 0;
+      pad.viewStart = 0;
+      pad.viewSpan  = 1;
       const el = document.getElementById(`pad-${i}`);
       if (el) el.className = 'pad';
       el?.querySelector('.pad-oneshot-btn')?.classList.remove('active');
       el?.querySelector('.pad-lock-btn')?.classList.remove('active');
+      el?.querySelector('.pad-env-btn')?.classList.remove('active');
+      const zEl = el?.querySelector('.pad-zoom-btn');
+      if (zEl) zEl.textContent = '1X';
       const timeEl = document.getElementById(`pad-time-${i}`);
       if (timeEl) timeEl.textContent = '';
       const c = el?.querySelector('.pad-mini-wave');
@@ -1305,6 +1965,9 @@
 
     document.getElementById('session-name').textContent = 'no session loaded';
     setStatus('READY');
+    updateAutoTrimBtnState();
+    updateSlotButtons();
+    updateAddTrackVisibility();
   }
 
   // ── INIT ───────────────────────────────────────────────────────────────────
@@ -1318,6 +1981,14 @@
     fileInput.addEventListener('change', (e) => {
       if (e.target.files[0]) loadFile(e.target.files[0]);
       e.target.value = '';
+    });
+
+    // Add Track — up to MAX_TRACKS audio files to gather samples from
+    document.getElementById('btn-add-track')?.addEventListener('click', () => {
+      const nextEmpty = tracks.findIndex(t => !t);
+      if (nextEmpty === -1) return;
+      pendingTrackIdx = nextEmpty;
+      fileInput.click();
     });
 
     // Drag & drop on upload panel
@@ -1373,26 +2044,79 @@
     // Auto Chop
     document.getElementById('btn-auto-chop').addEventListener('click', autoChop);
 
+    // Auto Trim
+    document.getElementById('btn-auto-trim').addEventListener('click', autoTrim);
+
     // Export Pads
     document.getElementById('btn-export-pads').addEventListener('click', exportPads);
+
+    // Waveform zoom
+    document.getElementById('wave-zoom-btn')?.addEventListener('click', cycleWaveZoom);
+    initWaveScrollbar();
+
+    // ADSR envelope popup
+    document.getElementById('env-modal-close')?.addEventListener('click', closeEnvModal);
+    document.getElementById('env-modal-overlay')?.addEventListener('mousedown', (e) => {
+      if (e.target.id === 'env-modal-overlay') closeEnvModal();
+    });
+    ['env-attack', 'env-decay', 'env-sustain', 'env-release'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => {
+        readEnvDraftFromSliders();
+        updateEnvLabels();
+        drawEnvCanvas();
+      });
+    });
+    document.querySelectorAll('.env-scope-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        envScope = btn.dataset.scope;
+        document.querySelectorAll('.env-scope-btn').forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+    document.getElementById('env-save-btn')?.addEventListener('click', saveEnvelope);
+    document.getElementById('env-reset-btn')?.addEventListener('click', resetEnvelope);
+
+    // Pad context menu (right-click copy/paste)
+    document.getElementById('pad-ctx-copy')?.addEventListener('click', copyTargetPad);
+    document.getElementById('pad-ctx-paste')?.addEventListener('click', pasteIntoTargetPad);
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#pad-context-menu')) closePadContextMenu();
+    });
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.pad')) closePadContextMenu();
+    });
 
     // Waveform canvas interaction
     initWaveInteraction();
 
-    // Mini-waveform edge drag (sample mode) — works for slice pads (against
-    // masterBuffer) and recorded buffer pads (against their own buffer).
+    // Mini-waveform edge drag / pan (sample mode) — works for slice pads
+    // (against whichever track they were chopped from) and recorded buffer
+    // pads (against their own buffer), via padSourceBuffer().
     window.addEventListener('mousemove', (ev) => {
       if (miniDragPad < 0) return;
       const pad = pads[miniDragPad];
-      const refDuration = (pad.type === 'buffer' && pad.buffer) ? pad.buffer.duration
-        : (masterBuffer ? masterBuffer.duration : 0);
+
+      if (miniDragTarget === 'pan-pending') {
+        if (Math.abs(ev.clientX - miniDragOriginX) <= 4) return; // not yet a real drag
+        miniDragTarget = 'pan';
+      }
+
+      if (miniDragTarget === 'pan') {
+        const deltaPx   = ev.clientX - miniDragOriginX;
+        const normDelta = (deltaPx / miniDragWidth) * miniDragViewSpan;
+        pad.viewStart = Math.max(0, Math.min(miniDragViewStartOrigin - normDelta, 1 - miniDragViewSpan));
+        renderPadMiniWave(miniDragPad);
+        return;
+      }
+
+      const srcBuf = padSourceBuffer(pad);
+      const refDuration = srcBuf ? srcBuf.duration : 0;
       if (!refDuration) return;
       const delta     = ev.clientX - miniDragOriginX;
-      const normDelta = (delta / miniDragWidth) * miniDragSpan;
+      const normDelta = (delta / miniDragWidth) * miniDragViewSpan;
       const minSpan   = 0.05 / refDuration; // 50ms minimum slice
       if (miniDragTarget === 'start') {
         pad.startNorm = Math.max(0, Math.min(miniDragOrigStart + normDelta, miniDragOrigEnd - minSpan));
-      } else {
+      } else if (miniDragTarget === 'end') {
         pad.endNorm = Math.min(1, Math.max(miniDragOrigEnd + normDelta, miniDragOrigStart + minSpan));
       }
       renderPadMiniWave(miniDragPad);
@@ -1407,6 +2131,11 @@
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+      if (e.key === 'Escape' && ctxMenuTargetPad >= 0) {
+        closePadContextMenu();
+        return;
+      }
+
       // Space = toggle waveform playback (always available)
       if (!e.repeat && e.key === ' ') {
         e.preventDefault();
@@ -1414,13 +2143,14 @@
         return;
       }
 
-      if (sampleModeOn || pendingPadBuffer !== null) return;
+      if (pendingPadBuffer !== null) return;
       if (e.repeat) return;
 
       const key = e.key.toLowerCase();
 
       // Combo: pad key held + 1 → toggle one-shot; pad key held + 2 → toggle lock
-      if ((key === '1' || key === '2') && heldPadKeys.size > 0) {
+      // (not while adjusting sample bounds — those digits are free to type elsewhere)
+      if (!sampleModeOn && (key === '1' || key === '2') && heldPadKeys.size > 0) {
         heldPadKeys.forEach((padIdx) => {
           const pad = pads[padIdx];
           const el  = document.getElementById(`pad-${padIdx}`);
@@ -1439,13 +2169,14 @@
       const idx = pads.findIndex(p => p.keyBinding.toLowerCase() === key);
       if (idx >= 0) {
         heldPadKeys.set(key, idx);
+        if (sampleModeOn) selectPad(idx); // keep the edited pad in sync with what's being previewed
         triggerPad(idx);
       }
     });
 
     document.addEventListener('keyup', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (sampleModeOn || pendingPadBuffer !== null) return;
+      if (pendingPadBuffer !== null) return;
       const key = e.key.toLowerCase();
       if (heldPadKeys.has(key)) {
         const idx = heldPadKeys.get(key);
