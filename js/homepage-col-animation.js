@@ -101,3 +101,11 @@ lissajous("bid2baud-lissajous", {
   breathing: { rate: 0.23, depth: 0.05 },
   phaseY: 6.15,
 });
+
+lissajous("bixer-lissajous", {
+  a: 58, b: 92, steps: 100,
+  colors: ["#4d8bff", "#1f5fc4"],
+  tailAt: 9.92, fade: 0.19, margin: 0, speed: 0.09,
+  breathing: { rate: 1.05, depth: 1.12 },
+  phaseY: 1.0,
+});

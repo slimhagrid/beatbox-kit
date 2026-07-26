@@ -21,6 +21,8 @@
   --bk-bodular-dk: #7a3fc9;   /* deeper violet for borders on light bg */
   --bk-bid2baud:    #ff4d8d;   /* hot pink — Bid2Baud's color */
   --bk-bid2baud-dk: #c92763;   /* deeper pink for borders on light bg */
+  --bk-bixer:      #4d8bff;   /* electric blue — Bixer's color */
+  --bk-bixer-dk:   #1f5fc4;   /* deeper blue for borders on light bg */
 
   /* UI chrome */
   --bk-frame:      #000000;   /* page border, hard rules */
@@ -133,6 +135,10 @@ body {
   background: var(--bk-bodular);
 }
 
+.bk-banner-cta.blue {
+  background: var(--bk-bixer);
+}
+
 /* ── SITE NAV ── */
 .bk-nav {
   background: var(--bk-white);
@@ -187,6 +193,12 @@ body {
 .bk-nav-link.active.bid2baud,
 .bk-nav-link.bid2baud:hover {
   background: var(--bk-bid2baud);
+  color: var(--bk-black);
+}
+
+.bk-nav-link.active.bixer,
+.bk-nav-link.bixer:hover {
+  background: var(--bk-bixer);
   color: var(--bk-black);
 }
 
@@ -262,6 +274,7 @@ body {
 .bk-nav-dropdown-item.branular:hover { background: var(--bk-branular); }
 .bk-nav-dropdown-item.bodular:hover { background: var(--bk-bodular); }
 .bk-nav-dropdown-item.bid2baud:hover { background: var(--bk-bid2baud); }
+.bk-nav-dropdown-item.bixer:hover { background: var(--bk-bixer); }
 
 .bk-nav-dropdown-item.baudit.active{
   background: var(--bk-baudit);
@@ -281,6 +294,10 @@ body {
 
 .bk-nav-dropdown-item.bid2baud.active{
   background: var(--bk-bid2baud);
+}
+
+.bk-nav-dropdown-item.bixer.active{
+  background: var(--bk-bixer);
 }
 
 /* ── MOBILE TOOLS SUBMENU ── */
@@ -331,6 +348,7 @@ body {
 .bk-mobile-tools-sub a.branular:hover { background: var(--bk-branular); color: var(--bk-black); }
 .bk-mobile-tools-sub a.bodular:hover { background: var(--bk-bodular); color: var(--bk-black); }
 .bk-mobile-tools-sub a.bid2baud:hover { background: var(--bk-bid2baud); color: var(--bk-black); }
+.bk-mobile-tools-sub a.bixer:hover { background: var(--bk-bixer); color: var(--bk-black); }
 
 /* ── SECTION EYEBROW (ribbon heading) ── */
 .bk-eyebrow {
@@ -430,6 +448,10 @@ body {
   background: var(--bk-bid2baud);
 }
 
+.bk-sticker-new.blue {
+  background: var(--bk-bixer);
+}
+
 /* ── BUTTONS ── */
 .bk-btn {
   font-family: var(--font-display);
@@ -485,6 +507,12 @@ body {
   border-color: var(--bk-black);
 }
 
+.bk-btn-primary.blue:hover {
+  background: var(--bk-bixer);
+  color: var(--bk-black);
+  border-color: var(--bk-black);
+}
+
 
 .bk-btn-secondary {
   background: var(--bk-white);
@@ -525,6 +553,17 @@ body {
   background: var(--bk-bid2baud-dk);
   color: var(--bk-white);
   border-color: var(--bk-bid2baud-dk);
+}
+
+.bk-btn-bixer {
+  background: var(--bk-bixer);
+  color: var(--bk-black);
+}
+
+.bk-btn-bixer:hover {
+  background: var(--bk-bixer-dk);
+  color: var(--bk-white);
+  border-color: var(--bk-bixer-dk);
 }
 
 /* ── HARD RULE ── */
@@ -840,6 +879,7 @@ body {
     .lp-tile-body.cyan   { border-top-color: var(--bk-branular); }
     .lp-tile-body.violet { border-top-color: var(--bk-bodular); }
     .lp-tile-body.pink   { border-top-color: var(--bk-bid2baud); }
+    .lp-tile-body.blue   { border-top-color: var(--bk-bixer); }
 
     .lp-tile-name {
       font-family: var(--font-display);

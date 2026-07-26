@@ -4,26 +4,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bid2Baud — Video to Audio · Beatbox Kit</title>
+  <title>Bixer — Audio Mixer · Beatbox Kit</title>
   <link rel="shortcut icon" type="image/x-icon" href="../assets/favicon.png">
   <link rel="apple-touch-icon" href="../assets/webclip.png">
   <meta name="description"
-    content="Drop in an MP4, MOV, or WebM recording of your beatbox routine and pull out a clean MP3 — fully on-device, nothing uploaded.">
+    content="Chain gain, EQ, compression, saturation, and a limiter over your beatbox audio or video — fully on-device, exported back as the same file type you uploaded.">
 
   <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- Shared design system -->
   <link rel="stylesheet" href="../styles/bk-global.css">
-  <!-- Bid2Baud-specific styles -->
-  <link rel="stylesheet" href="../styles/bid2baud.css">
+  <!-- Bixer-specific styles -->
+  <link rel="stylesheet" href="../styles/bixer.css">
 </head>
 
 <body>
 
-    <!-- TOP BANNER -->
+  <!-- TOP BANNER -->
   <div class="bk-top-banner">
     <a href="../" class="bk-banner-wordmark">BEATBOX <span>KIT</span></a>
-    <a href="../bodular/" class="bk-banner-cta violet">Try Bodular →</a>
+    <a href="../baudit/" class="bk-banner-cta">Try Baudit →</a>
   </div>
 
   <!-- SITE NAV -->
@@ -39,8 +39,8 @@
         <a href="../bampler/" class="bk-nav-dropdown-item bampler">Bampler — Sampler</a>
         <a href="../branular/" class="bk-nav-dropdown-item branular">Branular — Synthesizer</a>
         <a href="../bodular/" class="bk-nav-dropdown-item bodular">Bodular — Modular</a>
-        <a href="../bid2baud/" class="bk-nav-dropdown-item bid2baud active">Bid2Baud — Vid to Audio</a>
-        <a href="../bixer/" class="bk-nav-dropdown-item bixer">Bixer — Audio Mixer</a>
+        <a href="../bid2baud/" class="bk-nav-dropdown-item bid2baud">Bid2Baud — Vid to Audio</a>
+        <a href="../bixer/" class="bk-nav-dropdown-item bixer active">Bixer — Audio Mixer</a>
       </div>
     </div>
   </nav>
@@ -68,122 +68,100 @@
   </nav>
 
   <!-- HIDDEN INPUTS -->
-  <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/webm,video/*" style="display:none">
+  <input type="file" id="file-input"
+    accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/flac,video/mp4,video/quicktime,video/webm,video/x-matroska,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.mov,.m4v,.webm,.mkv"
+    style="display:none">
 
   <!-- HERO -->
   <section class="lp-hero">
     <div class="lp-hero-inner">
       <div class="lp-hero-text">
-        <div class="lp-hero-kicker pink">Video to Audio</div>
-        <h1 class="lp-hero-title pink">
-          TOOL 05:<br>
-          <em>Bid2Baud</em>
+        <div class="lp-hero-kicker blue">Audio Mixer</div>
+        <h1 class="lp-hero-title blue">
+          TOOL 06:<br>
+          <em>Bixer</em>
         </h1>
         <p class="lp-hero-sub">
-          Recorded yourself on a phone instead of a mic? Drop in the video and pull out a clean MP3.
+          Upload or record your routine, chain up gain / EQ / compression / saturation / a limiter, and export the mix — same file type you started with.
         </p>
       </div>
-
     </div>
   </section>
 
   <hr class="bk-rule">
 
-  <!-- BID2BAUD PAGE -->
-  <div class="bid2baud-page">
+  <!-- BIXER PAGE -->
+  <div class="bixer-page">
 
     <!-- Tool identity bar -->
-    <div class="bid2baud-tool-header">
+    <div class="bixer-tool-header">
       <div>
-        <div class="bid2baud-tool-name">BID2BAUD</div>
-        <div class="bid2baud-tool-desc">Upload a video of your beatbox routine. Bid2Baud extracts the audio and gives you a downloadable MP3.
-          <br>Everything runs in your browser — your video is never uploaded anywhere.
+        <div class="bixer-tool-name">BIXER</div>
+        <div class="bixer-tool-desc">Upload or record audio/video. Build a mix chain, preview it live, and export back to the same file type.
+          <br>Everything runs in your browser — nothing is ever uploaded anywhere.
         </div>
       </div>
     </div>
 
     <!-- App shell -->
-    <div class="bid2baud-shell">
+    <div class="bixer-shell">
 
       <!-- Shell title bar -->
-      <div class="bid2baud-shell-bar">
-        <span class="bid2baud-shell-title" id="session-name">no file loaded</span>
-        <span class="bid2baud-shell-status" id="shell-status">READY</span>
+      <div class="bixer-shell-bar">
+        <span class="bixer-shell-title" id="session-name">no file loaded</span>
+        <span class="bixer-shell-status" id="shell-status">READY</span>
       </div>
 
       <div class="format-note">
-        Supported formats: <strong>MP4</strong>, <strong>MOV</strong>, <strong>WebM</strong> · Max 2 minutes
+        Accepts: <strong>MP3, WAV, M4A, AAC, OGG, FLAC</strong> audio · <strong>MP4, MOV, WebM, MKV</strong> video · Max 2 minutes
       </div>
 
       <!-- App body -->
-      <div class="bid2baud-body">
+      <div class="bixer-body">
 
         <!-- ERROR MESSAGE (hidden until needed) -->
         <div id="error-msg" style="display:none;"></div>
 
         <!-- UPLOAD PANEL -->
         <div class="upload-panel" id="upload-panel">
-          <button class="btn-reset" id="btn-reset" title="Clear and start over" aria-label="Start over">↺ Start
-            Over</button>
-
           <canvas id="upload-icon-canvas" width="20" height="20"></canvas>
-          <div id="upload-title">Drop your video here</div>
-          <div id="upload-sub">MP4, MOV, WebM · Max 2 minutes</div>
-          <div class="mode-toggle-label">Processing:</div>
-          <div class="mode-toggle-desc" id="mode-toggle-desc"></div>
-          <div class="mode-toggle" id="mode-toggle">
-            <label class="mode-option">
-              <input type="radio" name="convert-mode" value="slow" checked>
-              <span>Lightweight</span>
-            </label>
-            <label class="mode-option">
-              <input type="radio" name="convert-mode" value="fast">
-              <span>Fast</span>
-            </label>
-          </div>
+          <div id="upload-title">Drop your audio or video here</div>
+          <div id="upload-sub">Or record straight from your mic</div>
+
           <div class="upload-actions">
-            <button class="btn-upload" id="btn-upload">Upload Video</button>
+            <button class="btn-upload" id="btn-upload">Upload File</button>
+            <button class="btn-record" id="btn-record">
+              <span id="rec-label">Record</span>
+            </button>
           </div>
+
+          <div id="rec-timer" style="display:none;">
+            ⏺ <span id="rec-time-display">0:00</span> / 2:00
+          </div>
+
           <div id="processing-indicator" style="display:none;">
             <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
               <div class="spinner"></div>
-              <span id="processing-msg">Reading video…</span>
+              <span id="processing-msg">Loading…</span>
             </div>
           </div>
         </div>
 
-        <!-- WAVE PANEL (hidden until a file's duration is known) -->
+        <!-- WAVE PANEL (hidden until a source is loaded) -->
         <div class="wave-panel" id="wave-panel" style="display:none;">
           <div class="wave-header">
             <div class="wave-source">
               <span class="wave-filename" id="wave-filename">—</span>
               <span class="wave-filesize" id="wave-filesize">—</span>
             </div>
-            <div class="wave-time">
-              <span id="wave-current-time">0:00</span> / <span id="wave-total-time">0:00</span>
-            </div>
+            <button class="btn-reset" id="btn-reset" title="Clear and start over" aria-label="Start over">↺ Start Over</button>
           </div>
           <div class="wave-canvas-wrap">
             <canvas id="wave-canvas"></canvas>
-            <div class="wave-encoding-overlay" id="wave-encoding-overlay" style="display:none;">
-              <div class="spinner spinner-light"></div>
-              <span>Finalizing MP3…</span>
-            </div>
           </div>
-          <div class="wave-ruler">
-            <span class="ruler-tick">0:00</span>
-            <span class="ruler-tick" id="wave-ruler-q1"></span>
-            <span class="ruler-tick" id="wave-ruler-mid"></span>
-            <span class="ruler-tick" id="wave-ruler-q3"></span>
-            <span class="ruler-tick" id="wave-ruler-end"></span>
-          </div>
-        </div>
-
-        <!-- RESULT PANEL (hidden until conversion completes) -->
-        <div class="result-panel" id="result-panel" style="display:none;">
-          <div class="result-header">
-            <span class="result-title">MP3 Ready</span>
-            <span class="badge badge-pink" id="result-size-badge">—</span>
+          <div class="wave-legend">
+            <span class="wave-legend-item"><span class="wave-legend-swatch original"></span>original</span>
+            <span class="wave-legend-item"><span class="wave-legend-swatch mixed"></span>mixed</span>
           </div>
           <div class="custom-player" id="custom-player">
             <button class="player-play-btn" id="player-play-btn" aria-label="Play / Pause">▶</button>
@@ -198,18 +176,46 @@
               </div>
             </div>
           </div>
-          <audio id="result-audio" style="display:none;"></audio>
-          <div class="result-actions">
-            <a class="btn-download" id="btn-download" download>⬇ Download MP3</a>
-            <button class="btn-secondary" id="btn-convert-another">Convert Another</button>
+        </div>
+
+        <!-- MIX RACK PANEL (hidden until a source is loaded) -->
+        <div class="rack-panel" id="rack-panel" style="display:none;">
+          <div class="rack-panel-header">
+            <span class="rack-panel-title">Mix Chain</span>
+          </div>
+          <div class="rack-list" id="rack-list">
+            <!-- module cards generated by bixer-stuff.js -->
+          </div>
+          <div class="rack-empty" id="rack-empty" style="display:none;">no modules yet — add one below to start the chain</div>
+          <div class="rack-add-row" id="rack-add-row">
+            <button class="rack-add-btn" data-type="gain">+ gain</button>
+            <button class="rack-add-btn" data-type="eq">+ eq</button>
+            <button class="rack-add-btn" data-type="compressor">+ compressor</button>
+            <button class="rack-add-btn" data-type="saturation">+ saturation</button>
+            <button class="rack-add-btn" data-type="limiter">+ limiter</button>
           </div>
         </div>
 
-      </div><!-- /bid2baud-body -->
-    </div><!-- /bid2baud-shell -->
+        <!-- EXPORT / RESULT PANEL (hidden until a source is loaded) -->
+        <div class="result-panel" id="result-panel" style="display:none;">
+          <div class="result-header">
+            <span class="result-title">Export</span>
+            <span class="badge badge-blue" id="result-format-badge">—</span>
+          </div>
+          <div class="result-actions">
+            <button class="btn-download" id="btn-render">⬇ Render + Download</button>
+            <a class="btn-secondary" id="btn-download-link" style="display:none;" download>Download</a>
+          </div>
+          <div id="render-error" style="display:none;"></div>
+        </div>
 
-  </div><!-- /bid2baud-page -->
+      </div><!-- /bixer-body -->
+    </div><!-- /bixer-shell -->
+
+  </div><!-- /bixer-page -->
+
   <hr class="bk-rule">
+
   <!-- ABOUT SECTION -->
   <section class="lp-about" id="about">
     <div class="bk-eyebrow" style="margin: -28px -20px 24px; border-bottom: 2px solid var(--bk-black);">ABOUT BEATBOX
@@ -235,12 +241,11 @@
     <span class="bk-footer-copy">Beatbox Kit by <a href="https://www.notcheese.lol" target="_blank">Adam Not Cheese</a>.</span>
   </footer>
 
-  <!-- lamejs (MP3 encoder) — loaded from jsdelivr, see CSP script-src in vercel.json -->
-  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
-  <!-- Bid2Baud JS -->
-  <script src="../js/bid2baud/bid2baud-stuff.js" defer></script>
-  <script src="../js/bid2baud/bid2baud-upload-animation.js" defer></script>
+  <script src="../js/bixer/bixer-ffmpeg.js" defer></script>
+  <script src="../js/bixer/bixer-stuff.js" defer></script>
+  <script src="../js/bixer/bixer-upload-animation.js" defer></script>
   <script src="../js/navbar-stuff.js" defer></script>
+  <script src="../js/bixer/bixer-init.js" defer></script>
 
 </body>
 

@@ -57,6 +57,16 @@ Convert a video of your beatbox routine into a clean MP3, fully on-device.
 
 **How to use it:** Open [`/bid2baud`](bid2baud/), choose **Lightweight** (smaller download, good for slow connections) or **Fast** (bigger download, faster processing) under Processing, then drag in or upload your video. Preview the result and **Download MP3** once it's ready.
 
+### Bixer — Audio Mixer
+Chain up a mix rack over your beatbox audio or video and export back to the same file type you started with.
+- Accepts audio (MP3, WAV, M4A, AAC, OGG, FLAC) or video (MP4, MOV, WebM, MKV)
+- Record straight from your mic
+- Reorderable rack of Gain, EQ, Compressor, Saturation, and Limiter modules
+- Live playback preview through the full chain as you tweak it
+- Export renders and downloads the same file type you uploaded (or WAV for recordings)
+
+**How to use it:** Open [`/bixer`](bixer/), upload an audio or video file, or hit **Record** to capture from your mic. Add modules to the mix chain with the **+ gain / + eq / + compressor / + saturation / + limiter** buttons, reorder them with the ▲▼ buttons, and toggle any module **on/bypassed**. Hit play to preview the chain live, then **Render + Download** to export.
+
 ## Status
 
 All tools are actively in development — you may run into glitches or rough edges. Feedback and bug reports are welcome.
